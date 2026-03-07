@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { PALETTE } from "../constants";
 import { formatDateShort, getFirstDate } from "../helpers";
 import { Btn, PageWrap } from "../components/UI";
@@ -7,10 +7,23 @@ import { clearSession } from "../googleAuth";
 import { LOGO_B64 } from "../logo_lufa.js";
 
 export default function ListView({ events, onNew, onDetail, onGenerate, generating, loading, onImport, user, onSignOut }) {
-  const importRef = useRef();
-  const today     = new Date().toISOString().slice(0, 10);
+  const importRef  = useRef();
+  const today      = new Date().toISOString().slice(0, 10);
+  const [search, setSearch] = useState("");
 
-  const sorted   = [...events].sort((a, b) => (getFirstDate(a) || "9999").localeCompare(getFirstDate(b) || "9999"));
+  // Filter by search
+  const filtered = events.filter(ev => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      (ev.eventName || "").toLowerCase().includes(q) ||
+      (ev.adresse   || "").toLowerCase().includes(q) ||
+      (ev.bookedBy  || "").toLowerCase().includes(q) ||
+      (ev.createdBy || "").toLowerCase().includes(q)
+    );
+  });
+
+  const sorted   = [...filtered].sort((a, b) => (getFirstDate(a) || "9999").localeCompare(getFirstDate(b) || "9999"));
   const upcoming = sorted.filter(e => !getFirstDate(e) || getFirstDate(e) >= today);
   const past     = sorted.filter(e =>  getFirstDate(e) && getFirstDate(e) <  today).reverse();
 
@@ -57,7 +70,7 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
   return (
     <PageWrap>
       {/* Header with logo */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 32, paddingTop: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 24, paddingTop: 12 }}>
         <img src={LOGO_B64} alt="Les Fermes Lufa" style={{ width: 100, height: 100, objectFit: "contain", marginBottom: 16, filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.4))" }} />
         <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: "#e8f0e9", marginBottom: 4 }}>
           Guide de Planification
@@ -65,22 +78,41 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", letterSpacing: "0.04em" }}>
           Les Fermes Lufa
         </div>
-        <div style={{ marginTop: 20 }}>
-          <Btn onClick={onNew}>+ Nouvel événement</Btn>
+
+        {/* User info + logout */}
+        <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+          {user?.picture && <img src={user.picture} alt={user?.name} style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.2)" }} />}
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{user?.name || ""}</span>
+          <button onClick={() => { clearSession(); onSignOut(); }}
+            style={{ background: "rgba(239,83,80,0.15)", border: "1px solid rgba(239,83,80,0.3)", borderRadius: 6, color: "#ef9a9a", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: "5px 12px" }}>
+            Déconnexion
+          </button>
         </div>
 
-        {/* User info */}
-        {user && (
-          <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 10 }}>
-            {user.picture && <img src={user.picture} alt={user.name} style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.15)" }} />}
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{user.name}</span>
-            <button onClick={() => { clearSession(); onSignOut(); }}
-              style={{ background: "rgba(239,83,80,0.12)", border: "1px solid rgba(239,83,80,0.25)", borderRadius: 6, color: "#ef9a9a", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", padding: "4px 10px" }}>
-              Déconnexion
-            </button>
-          </div>
-        )}
+        <div style={{ marginTop: 16 }}>
+          <Btn onClick={onNew}>+ Nouvel événement</Btn>
+        </div>
       </div>
+
+      {/* Search bar */}
+      {events.length > 0 && (
+        <div style={{ marginBottom: 20, position: "relative" }}>
+          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: "rgba(255,255,255,0.3)" }}>🔍</span>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Rechercher un événement..."
+            autoComplete="off"
+            style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: `1px solid ${PALETTE.border}`, borderRadius: 8, padding: "9px 12px 9px 36px", color: "#e8f0e9", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+          />
+          {search && (
+            <button onClick={() => setSearch("")}
+              style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>
+              ✕
+            </button>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div style={{ textAlign: "center", padding: 60, color: "rgba(255,255,255,0.3)" }}>Chargement...</div>
@@ -89,6 +121,10 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
           <div style={{ fontSize: 40, marginBottom: 14 }}>🗓️</div>
           <div style={{ color: "rgba(255,255,255,0.45)", marginBottom: 20, fontSize: 15 }}>Aucun événement pour l'instant.</div>
           <Btn onClick={onNew}>Créer le premier événement</Btn>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 40, color: "rgba(255,255,255,0.35)", fontSize: 14 }}>
+          Aucun résultat pour « {search} »
         </div>
       ) : (
         <>
