@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { PALETTE, inp } from "../constants";
-import { blankDay, blankRow, uid, readFileAsDataURL, defaultForm } from "../helpers";
+import { blankDay, blankActivity, uid, readFileAsDataURL, defaultForm } from "../helpers";
 import DayEditor from "../components/DayEditor";
 import { Inp, Txt, Fld, Card, SecTitle, Btn, BackBtn, PageWrap } from "../components/UI";
 
@@ -11,7 +11,7 @@ function ImageCard({ img, onChange, onRemove }) {
         <img src={img.data} alt={img.name} style={{ width: 80, height: 64, objectFit: "cover", borderRadius: 6, flexShrink: 0, border: "1px solid rgba(255,255,255,0.1)" }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.8)", marginBottom: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{img.name}</div>
-          <div style={{ marginBottom: 2 }}>
+          <div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
               <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Largeur dans le doc</span>
               <span style={{ fontSize: 11, fontWeight: 700, color: PALETTE.greenLight }}>{img.width}%</span>
@@ -37,22 +37,22 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
     return {
       ...defaultForm,
       days: [
-        { ...blankDay("travel_depart"), id: uid() },
-        { ...blankDay("animation"), id: uid(), rows: [blankRow("Montage"), blankRow("Animation"), blankRow("Demontage")] },
-        { ...blankDay("travel_return"), id: uid() },
+        { ...blankDay(), id: uid(), activities: [{ ...blankActivity("travel_depart"), id: uid() }] },
+        { ...blankDay(), id: uid(), activities: [{ ...blankActivity("setup"), id: uid(), activityLabel: "Montage" }, { ...blankActivity("animation"), id: uid(), activityLabel: "Animation" }, { ...blankActivity("teardown"), id: uid(), activityLabel: "Démontage" }] },
+        { ...blankDay(), id: uid(), activities: [{ ...blankActivity("travel_return"), id: uid() }] },
       ],
     };
   };
 
-  const [form, setForm]   = useState(initForm);
-  const [error, setError] = useState("");
+  const [form, setForm]     = useState(initForm);
+  const [error, setError]   = useState("");
   const [saving, setSaving] = useState(false);
   const fileRef = useRef();
   const set = k => v => setForm(f => ({ ...f, [k]: v }));
 
   const updateDay = (id, val) => setForm(f => ({ ...f, days: f.days.map(d => d.id === id ? val : d) }));
   const removeDay = id => setForm(f => ({ ...f, days: f.days.filter(d => d.id !== id) }));
-  const addDay    = () => setForm(f => ({ ...f, days: [...f.days, { ...blankDay("animation"), id: uid(), rows: [blankRow()] }] }));
+  const addDay = () => setForm(f => ({ ...f, days: [...f.days, { ...blankDay(), id: uid(), activities: [{ ...blankActivity("animation"), id: uid() }] }] }));
 
   const handleMapUpload = async e => {
     const files = Array.from(e.target.files);
@@ -67,7 +67,7 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
   const removeImage = id => setForm(f => ({ ...f, mapImages: f.mapImages.filter(i => i.id !== id) }));
 
   const handleSave = async () => {
-    if (!form.eventName.trim()) { setError("Le nom de l'evenement est requis."); return; }
+    if (!form.eventName.trim()) { setError("Le nom de l'événement est requis."); return; }
     setError(""); setSaving(true);
     try { await onSave(form); }
     catch (e) { setError("Erreur : " + e.message); setSaving(false); }
@@ -77,80 +77,82 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
     <PageWrap>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
         <BackBtn onClick={onCancel} />
-        <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#e8f0e9" }}>{isEdit ? "Modifier l'evenement" : "Nouvel evenement"}</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#e8f0e9" }}>
+          {isEdit ? "Modifier l'événement" : "Nouvel événement"}
+        </h2>
       </div>
 
       <Card>
-        <SecTitle>Informations generales</SecTitle>
-        <Fld label="Nom de l'evenement">
-          <Inp value={form.eventName} onChange={set("eventName")} placeholder="ex: Fete des semences - Pepiniere Locas" />
+        <SecTitle>Informations générales</SecTitle>
+        <Fld label="Nom de l'événement">
+          <Inp value={form.eventName} onChange={set("eventName")} placeholder="ex: Fête des semences – Pépinière Locas" />
         </Fld>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Fld label="Guide rempli par" style={{ marginBottom: 0 }}>
             <Inp value={form.createdBy || ""} onChange={set("createdBy")} placeholder="ex: Marie Tremblay" />
           </Fld>
-          <Fld label="Evenement reserve par" style={{ marginBottom: 0 }}>
+          <Fld label="Événement réservé par" style={{ marginBottom: 0 }}>
             <Inp value={form.bookedBy || ""} onChange={set("bookedBy")} placeholder="ex: Jean Dupont" />
           </Fld>
         </div>
       </Card>
 
       <Card>
-        <SecTitle>Lieu et acces</SecTitle>
+        <SecTitle>📍 Lieu</SecTitle>
         <Fld label="Adresse principale">
           <Inp value={form.adresse} onChange={set("adresse")} placeholder="ex: 3254 Bd Sainte-Rose, Laval, QC H7P 4L7" />
         </Fld>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Fld label="Acces montage a partir de" style={{ marginBottom: 0 }}>
-            <Inp value={form.montageAccesFrom} onChange={set("montageAccesFrom")} placeholder="ex: 7h00 AM" />
-          </Fld>
-          <Fld label="Objectif inscriptions total (optionnel)" style={{ marginBottom: 0 }}>
-            <Inp value={form.signupObjectiveTotal || ""} onChange={set("signupObjectiveTotal")} placeholder="ex: 150 inscriptions" />
-          </Fld>
-        </div>
+        <Fld label="🎯 Objectif inscriptions – total événement (optionnel)" style={{ marginBottom: 0 }}>
+          <Inp value={form.signupObjectiveTotal || ""} onChange={set("signupObjectiveTotal")} placeholder="ex: 150 inscriptions" />
+        </Fld>
       </Card>
 
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <SecTitle style={{ marginBottom: 0 }}>Horaire — {form.days.length} jour{form.days.length !== 1 ? "s" : ""}</SecTitle>
-          <Btn onClick={addDay} variant="subtle" small>+ Journee</Btn>
+          <SecTitle style={{ marginBottom: 0 }}>📅 Horaire — {form.days.length} jour{form.days.length !== 1 ? "s" : ""}</SecTitle>
+          <Btn onClick={addDay} variant="subtle" small>+ Journée</Btn>
         </div>
         {form.days.length === 0 && (
-          <div style={{ textAlign: "center", padding: "18px 0", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>Aucune journee. Cliquez sur "+ Journee".</div>
+          <div style={{ textAlign: "center", padding: "18px 0", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
+            Aucune journée. Cliquez sur "+ Journée" pour commencer.
+          </div>
         )}
         {form.days.map((day, i) => (
-          <DayEditor key={day.id} day={day} index={i} onChange={v => updateDay(day.id, v)} onRemove={() => removeDay(day.id)} />
+          <DayEditor key={day.id} day={day} index={i}
+            onChange={v => updateDay(day.id, v)}
+            onRemove={() => removeDay(day.id)} />
         ))}
       </Card>
 
       <Card>
-        <SecTitle>Contact sur place</SecTitle>
+        <SecTitle>👤 Contact sur place</SecTitle>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Fld label="Nom"><Inp value={form.contactNom} onChange={set("contactNom")} placeholder="ex: Stephanie" /></Fld>
-          <Fld label="Telephone"><Inp value={form.contactTel} onChange={set("contactTel")} placeholder="ex: 438-502-0202" /></Fld>
-          <Fld label="Reseau WiFi"><Inp value={form.wifi} onChange={set("wifi")} placeholder="ex: Pepiniere invite" /></Fld>
+          <Fld label="Nom"><Inp value={form.contactNom} onChange={set("contactNom")} placeholder="ex: Stéphanie" /></Fld>
+          <Fld label="Téléphone"><Inp value={form.contactTel} onChange={set("contactTel")} placeholder="ex: 438-502-0202" /></Fld>
+          <Fld label="Réseau WiFi"><Inp value={form.wifi} onChange={set("wifi")} placeholder="ex: Pépinière invite" /></Fld>
           <Fld label="Mot de passe WiFi"><Inp value={form.wifiMdp} onChange={set("wifiMdp")} placeholder="ex: PepiniereL.ocas" /></Fld>
         </div>
       </Card>
 
       <Card>
-        <SecTitle>Materiel</SecTitle>
-        <Fld label="Materiel necessaire (1 item par ligne)">
+        <SecTitle>📦 Matériel</SecTitle>
+        <Fld label="Matériel nécessaire (1 item par ligne)">
           <Txt value={form.materielNecessaire} onChange={set("materielNecessaire")} rows={6} />
         </Fld>
-        <Fld label="Materiel fourni sur place (optionnel)">
+        <Fld label="Matériel fourni sur place (optionnel)">
           <Txt value={form.materielFourni} onChange={set("materielFourni")} rows={3} placeholder="Optionnel..." />
         </Fld>
       </Card>
 
       <Card>
-        <SecTitle>Plan d'acces</SecTitle>
+        <SecTitle>🗺️ Plan d'accès</SecTitle>
         <Fld label="Instructions de montage">
-          <Txt value={form.instructions} onChange={set("instructions")} rows={3} />
+          <Txt value={form.instructions} onChange={set("instructions")} rows={3}
+            placeholder="ex: Accéder au débarcadère pour déposer le matériel, puis se stationner dans les zones indiquées. Laisser vide si non applicable." />
         </Fld>
-        <Fld label="Cartes / images (ajoutez-en autant que necessaire)">
+        <Fld label="Cartes / images (ajoutez-en autant que nécessaire)">
           {(form.mapImages || []).length === 0 && (
-            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 8 }}>Aucune image.</div>
+            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 8 }}>Aucune image ajoutée.</div>
           )}
           {(form.mapImages || []).map(img => (
             <ImageCard key={img.id} img={img} onChange={v => updateImage(img.id, v)} onRemove={() => removeImage(img.id)} />
@@ -164,9 +166,10 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
       </Card>
 
       <Card style={{ background: "rgba(255,235,59,0.04)", border: "1px solid rgba(255,235,59,0.14)" }}>
-        <SecTitle>Notes internes</SecTitle>
-        <Fld label="Remarques pour l'equipe (apparaissent en jaune dans le doc)">
-          <Txt value={form.notesInternes} onChange={set("notesInternes")} rows={4} placeholder="ex: Contacter Stephanie la veille..." />
+        <SecTitle>🔒 Notes internes</SecTitle>
+        <Fld label="Remarques pour l'équipe (apparaissent en jaune dans le doc)">
+          <Txt value={form.notesInternes} onChange={set("notesInternes")} rows={4}
+            placeholder="ex: Contacter Stéphanie la veille, charger le matériel vendredi matin..." />
         </Fld>
       </Card>
 
@@ -175,7 +178,7 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
       )}
 
       <div style={{ display: "flex", gap: 10, marginBottom: 48 }}>
-        <Btn onClick={handleSave} disabled={saving}>{saving ? "Sauvegarde..." : isEdit ? "Mettre a jour" : "Sauvegarder l'evenement"}</Btn>
+        <Btn onClick={handleSave} disabled={saving}>{saving ? "Sauvegarde..." : isEdit ? "💾 Mettre à jour" : "💾 Sauvegarder l'événement"}</Btn>
         <Btn onClick={onCancel} variant="ghost">Annuler</Btn>
       </div>
     </PageWrap>

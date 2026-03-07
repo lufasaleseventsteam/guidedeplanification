@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { PALETTE } from "../constants";
+import { LOGO_B64 } from "../logo_lufa";
 
 const CORRECT_PIN = "5832";
 const SESSION_KEY = "lufa-pin-unlocked";
@@ -68,15 +69,10 @@ export default function PinLock({ onUnlock }) {
     }}>
       {/* Logo */}
       <div style={{ marginBottom: 40, textAlign: "center" }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: 18,
-          background: `linear-gradient(135deg, ${PALETTE.greenLight}, ${PALETTE.green})`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 30, margin: "0 auto 16px",
-          boxShadow: `0 8px 32px ${PALETTE.green}44`,
-        }}>🌱</div>
-        <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em" }}>Fiches Événements</div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>Lufa Farms · Coordination terrain</div>
+        <img src={LOGO_B64} alt="Les Fermes Lufa"
+          style={{ width: 110, height: 110, objectFit: "contain", margin: "0 auto 16px", display: "block", filter: "drop-shadow(0 4px 20px rgba(0,0,0,0.5))" }} />
+        <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em" }}>Guide de Planification</div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>Les Fermes Lufa</div>
       </div>
 
       {/* PIN prompt */}

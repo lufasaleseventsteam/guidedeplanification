@@ -46,26 +46,35 @@ export function blankRow(label = "") {
   };
 }
 
-export function blankDay(type = "animation") {
+export function blankDay() {
   return {
     id: `day-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     date: "",
+    activities: [blankActivity("animation")],
+  };
+}
+
+export function blankActivity(type = "animation") {
+  return {
+    id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     type,
     customLabel: "",
-    signupObjective: "",   // per-day signup goal (animation days only)
-    rows: [],
     departureTime: "",
     arrivalTime: "",
     transportNote: "",
+    timeStart: "",
+    timeEnd: "",
+    location: "Événement",
+    activityLabel: "",
+    signupObjective: "",
   };
 }
 
 export const defaultForm = {
   eventName: "",
-  createdBy: "",          // person who filled the guide
-  bookedBy: "",           // person who booked the event
+  createdBy: "",
+  bookedBy: "",
   adresse: "",
-  montageAccesFrom: "7h00 AM",
   contactNom: "",
   contactTel: "",
   wifi: "",
@@ -73,8 +82,8 @@ export const defaultForm = {
   signupObjectiveTotal: "",
   materielNecessaire: "CHARIOT\nTABLE\nNAPPE NOIRE 6'\nBANNIÈRE\nCAISSON DE BOIS\nSAVON + HUILE",
   materielFourni: "",
-  instructions: "Accéder au débarcadère dans un premier lieu afin de déposer le matériel et aller vous stationner dans les parties rouges. Le contact sur place vous indiquera l'emplacement de notre kiosque.",
+  instructions: "",
   notesInternes: "",
-  mapImages: [],          // array of { id, data, name, width } — replaces mapImageData/mapImageName
+  mapImages: [],
   days: [],
 };

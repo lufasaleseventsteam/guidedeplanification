@@ -65,6 +65,15 @@ export async function generatePdf(form) {
 
   const spacer = (h = 3) => { y += h; };
 
+  // ── Logo ──────────────────────────────────────────────────────────────────
+  try {
+    const { LOGO_B64 } = await import("../logo_lufa.js");
+    const logoSize = 22;
+    const logoX = ML + CW / 2 - logoSize / 2;
+    doc.addImage(LOGO_B64, "PNG", logoX, y, logoSize, logoSize);
+    y += logoSize + 4;
+  } catch(e) { /* skip */ }
+
   // ── Title ──────────────────────────────────────────────────────────────────
   doc.setFillColor(...C.headerGreen);
   doc.rect(ML, y, CW, 12, "F");
@@ -100,53 +109,53 @@ export async function generatePdf(form) {
   spacer(3);
   banner("HORAIRE (montage, livraisons, animation, démontage)");
 
-  const filledDays = (form.days || []).filter(day => {
-    const isTrav = day.type === "travel_depart" || day.type === "travel_return";
-    if (isTrav) return day.departureTime || day.arrivalTime || day.date;
-    return day.date || (day.rows || []).some(r => r.timeStart || r.activity);
-  });
+  const filledDays = (form.days || []).filter(day =>
+    day.date || (day.activities || []).some(a => a.timeStart || a.departureTime || a.type)
+  );
 
   const schedBody = [];
   for (const day of filledDays) {
-    const dateStr  = formatDate(day.date);
-    const isTravel = day.type === "travel_depart" || day.type === "travel_return";
-    const isAnim   = day.type === "animation";
-    const dayLabel = day.type === "custom"
-      ? (day.customLabel || "Journée")
-      : (DAY_TYPE_LABELS[day.type] || day.type);
-    const fill = isTravel ? C.lightBlue : C.lightGreen;
+    const dateStr = formatDate(day.date);
+    const acts = day.activities || [];
 
-    if (isTravel) {
-      const details = [
-        day.departureTime ? `Départ : ${fmt24(day.departureTime)}` : "",
-        day.arrivalTime   ? `Arrivée : ${fmt24(day.arrivalTime)}`  : "",
-        day.transportNote || "",
-      ].filter(Boolean).join("   |   ");
-      schedBody.push({
-        cells: [dayLabel, dateStr || "—", details, "", ""],
-        fills: [fill, fill, fill, fill, fill],
-        span:  true, // spans last 3 cols
-      });
-    } else {
-      const rows = day.rows || [];
-      if (isAnim && day.signupObjective) {
+    acts.forEach((act, i) => {
+      const isTravel = act.type === "travel_depart" || act.type === "travel_return";
+      const isAnim   = act.type === "animation";
+      const actLabel = act.type === "custom"
+        ? (act.customLabel || "Autre")
+        : (DAY_TYPE_LABELS[act.type] || act.type);
+      const fill = isTravel ? C.lightBlue : C.lightGreen;
+
+      if (isAnim && act.signupObjective) {
         schedBody.push({
-          cells: ["🎯 Objectif", dateStr || "—", day.signupObjective, "", ""],
+          cells: ["Objectif", i === 0 ? (dateStr || "—") : "", act.signupObjective, "", ""],
           fills: [C.lightYellow, C.lightYellow, C.lightYellow, C.lightYellow, C.lightYellow],
           span: true,
         });
       }
-      rows.forEach((row, i) => {
-        const timeStr = row.timeStart && row.timeEnd
-          ? `${fmt24(row.timeStart)} – ${fmt24(row.timeEnd)}`
-          : fmt24(row.timeStart) || "";
+
+      if (isTravel) {
+        const details = [
+          act.departureTime ? `Depart : ${fmt24(act.departureTime)}` : "",
+          act.arrivalTime   ? `Arrivee : ${fmt24(act.arrivalTime)}`  : "",
+          act.transportNote || "",
+        ].filter(Boolean).join("  |  ");
         schedBody.push({
-          cells: [i === 0 ? dayLabel : "", i === 0 ? (dateStr || "—") : "", timeStr, row.location || "", row.activity || ""],
+          cells: [actLabel, i === 0 ? (dateStr || "—") : "", details, "", ""],
+          fills: [fill, fill, fill, fill, fill],
+          span: true,
+        });
+      } else {
+        const timeStr = act.timeStart && act.timeEnd
+          ? `${fmt24(act.timeStart)} - ${fmt24(act.timeEnd)}`
+          : fmt24(act.timeStart) || "";
+        schedBody.push({
+          cells: [actLabel, i === 0 ? (dateStr || "—") : "", timeStr, act.location || "", act.activityLabel || ""],
           fills: [fill, fill, C.white, C.white, C.white],
           span: false,
         });
-      });
-    }
+      }
+    });
   }
 
   // Draw schedule table manually
@@ -229,7 +238,7 @@ export async function generatePdf(form) {
   spacer(4);
   checkPage(30);
   banner("ACCÈS AU SITE (MONTAGE) ET STATIONNEMENT");
-  const firstEventDay = filledDays.find(d => d.type === "setup" || d.type === "animation");
+  const firstEventDay = filledDays.find(d => (d.activities || []).some(a => a.type === "setup" || a.type === "animation"));
   const firstDateStr  = firstEventDay ? formatDate(firstEventDay.date) : "";
 
   doc.setFillColor(...C.white);
@@ -240,7 +249,7 @@ export async function generatePdf(form) {
   doc.setFontSize(8.5);
   doc.setFont("helvetica", "normal");
   const accessLines = [
-    `• Montage : à partir de ${form.montageAccesFrom || "—"}`,
+    `• Accès : Voir le plan d'accès ci-bas.`,
     `📆 ${firstDateStr || "—"}`,
     `📍 ${form.adresse || "—"}`,
     `• Stationnement : En rouge sur la carte ci-bas.`,

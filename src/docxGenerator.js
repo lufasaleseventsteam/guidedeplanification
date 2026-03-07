@@ -178,7 +178,7 @@ export async function generateDocx(form) {
       new TableRow({ children: [new TableCell({
         width: { size: 9360, type: WidthType.DXA }, borders: bords, margins: cmLg,
         children: [
-          P([Tb("• Montage : "), T(`à partir de ${form.montageAccesFrom || "—"}`)]),
+          P([Tb("• Accès : "), T("Voir le plan d'accès ci-bas.")]),
           firstDateStr ? P([T(`📆 ${firstDateStr}`)]) : sp(),
           P([T(`📍 ${form.adresse || "—"}`)]),
           P([Tb("• Stationnement : "), T("En rouge sur la carte ci-bas.")]),

@@ -12,7 +12,7 @@ export default function DetailView({ ev, onEdit, onDelete, onBack, onGenerate, g
     ? `${formatDateShort(dates[0])} – ${formatDateShort(dates[dates.length - 1])}`
     : dates[0] ? formatDateShort(dates[0]) : "—";
   const nbDays    = ev.days?.length || 0;
-  const animDays  = (ev.days || []).filter(d => d.type === "animation");
+  const animDays  = (ev.days || []).filter(d => (d.activities || []).some(a => a.type === "animation"));
 
   return (
     <PageWrap>
@@ -50,12 +50,12 @@ export default function DetailView({ ev, onEdit, onDelete, onBack, onGenerate, g
                 <div style={{ fontSize: 15, fontWeight: 700, color: "#ffe082" }}>{ev.signupObjectiveTotal}</div>
               </div>
             )}
-            {animDays.filter(d => d.signupObjective).map(d => (
-              <div key={d.id} style={{ marginBottom: 4, fontSize: 13 }}>
+            {animDays.flatMap(d => (d.activities || []).filter(a => a.signupObjective).map(a => (
+              <div key={a.id} style={{ marginBottom: 4, fontSize: 13 }}>
                 <span style={{ color: "rgba(255,255,255,0.4)" }}>{formatDateShort(d.date)} : </span>
-                <span style={{ color: "#ffe082" }}>{d.signupObjective}</span>
+                <span style={{ color: "#ffe082" }}>{a.signupObjective}</span>
               </div>
-            ))}
+            )))}
           </div>
         )}
       </Card>
@@ -63,37 +63,34 @@ export default function DetailView({ ev, onEdit, onDelete, onBack, onGenerate, g
       {/* Schedule */}
       <Card>
         <SecTitle>Horaire ({nbDays} jour{nbDays !== 1 ? "s" : ""})</SecTitle>
-        {(ev.days || []).map((day, i) => {
-          const isTravel = day.type === "travel_depart" || day.type === "travel_return";
-          const label    = day.type === "custom" ? (day.customLabel || "Journée") : (DAY_TYPE_LABELS[day.type] || day.type);
-          return (
-            <div key={day.id} style={{ display: "flex", gap: 12, padding: "9px 0", borderBottom: i < ev.days.length - 1 ? `1px solid ${PALETTE.border}` : "none", flexWrap: "wrap" }}>
-              <div style={{ minWidth: 90, fontSize: 12, color: "rgba(255,255,255,0.38)", paddingTop: 2 }}>
-                {formatDateShort(day.date)}
-              </div>
-              <div style={{ fontSize: 13, flex: 1 }}>
-                <span style={{ fontWeight: 700, color: PALETTE.greenLight }}>{label}</span>
-                {isTravel && (day.departureTime || day.arrivalTime) && (
-                  <span style={{ color: "rgba(255,255,255,0.45)", marginLeft: 8 }}>
-                    {day.departureTime ? `Départ ${fmt24(day.departureTime)}` : ""}
-                    {day.departureTime && day.arrivalTime ? " → " : ""}
-                    {day.arrivalTime   ? `Arrivée ${fmt24(day.arrivalTime)}`  : ""}
-                    {day.transportNote ? ` (${day.transportNote})` : ""}
-                  </span>
-                )}
-                {!isTravel && (day.rows || []).map((r, ri) => (
-                  <span key={r.id} style={{ color: "rgba(255,255,255,0.45)", marginLeft: ri === 0 ? 8 : 14 }}>
-                    {r.timeStart ? `${fmt24(r.timeStart)}–${fmt24(r.timeEnd)} ` : ""}
-                    {r.activity}
-                  </span>
-                ))}
-                {day.signupObjective && (
-                  <span style={{ color: "#ffe082", marginLeft: 10, fontSize: 12 }}>🎯 {day.signupObjective}</span>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {(ev.days || []).map((day, i) => (
+          <div key={day.id} style={{ padding: "9px 0", borderBottom: i < ev.days.length - 1 ? `1px solid ${PALETTE.border}` : "none" }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginBottom: 4 }}>{formatDateShort(day.date)}</div>
+            {(day.activities || []).map(act => {
+              const isTravel = act.type === "travel_depart" || act.type === "travel_return";
+              const label = act.type === "custom" ? (act.customLabel || "Autre") : (DAY_TYPE_LABELS[act.type] || act.type);
+              return (
+                <div key={act.id} style={{ display: "flex", gap: 10, fontSize: 13, marginBottom: 3, flexWrap: "wrap" }}>
+                  <span style={{ fontWeight: 700, color: PALETTE.greenLight, minWidth: 100 }}>{label}</span>
+                  {isTravel ? (
+                    <span style={{ color: "rgba(255,255,255,0.55)" }}>
+                      {act.departureTime ? `Départ ${fmt24(act.departureTime)}` : ""}
+                      {act.departureTime && act.arrivalTime ? " → " : ""}
+                      {act.arrivalTime ? `Arrivée ${fmt24(act.arrivalTime)}` : ""}
+                      {act.transportNote ? ` (${act.transportNote})` : ""}
+                    </span>
+                  ) : (
+                    <span style={{ color: "rgba(255,255,255,0.55)" }}>
+                      {act.timeStart ? `${fmt24(act.timeStart)}–${fmt24(act.timeEnd)}` : ""}
+                      {act.activityLabel ? ` · ${act.activityLabel}` : ""}
+                    </span>
+                  )}
+                  {act.signupObjective && <span style={{ color: "#ffe082", fontSize: 12 }}>🎯 {act.signupObjective}</span>}
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </Card>
 
       {/* Internal notes */}
