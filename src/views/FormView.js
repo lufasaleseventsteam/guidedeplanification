@@ -4,7 +4,7 @@ import { blankDay, blankActivity, uid, readFileAsDataURL, defaultForm } from "..
 import DayEditor from "../components/DayEditor";
 import { Inp, Txt, Fld, Card, SecTitle, Btn, BackBtn, PageWrap } from "../components/UI";
 
-const MAPS_API_KEY = "AIzaSyCpIHchz4OHd5spGMOT4esNHViW4Usf8P0";
+const MAPS_API_KEY = process.env.REACT_APP_MAPS_API_KEY;
 
 function loadMapsScript() {
   return new Promise((res) => {

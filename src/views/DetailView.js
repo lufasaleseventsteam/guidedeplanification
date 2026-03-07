@@ -36,6 +36,7 @@ export default function DetailView({ ev, onEdit, onDelete, onBack, onGenerate, g
             ["🔧 Accès montage",    ev.montageAccesFrom || "—"],
             ...(ev.boothNumber      ? [["🎪 Kiosque / emplacement", ev.boothNumber]]       : []),
             ...(ev.camionElectrique ? [["⚡ Véhicule",              "Camion électrique"]]  : []),
+            [ev.isOutdoor ? "🌤️ Type" : "🏢 Type", ev.isOutdoor ? "Extérieur" : "Intérieur"],
             ...(ev.createdBy ? [["📋 Guide rempli par",  ev.createdBy]] : []),
             ...(ev.bookedBy  ? [["📅 Réservé par",        ev.bookedBy]]  : []),
           ].map(([k, v]) => (

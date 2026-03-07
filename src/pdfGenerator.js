@@ -261,7 +261,8 @@ export async function generatePdf(form) {
   const accessLines = [
     `• Accès : Voir le plan d'accès ci-bas.`,
     ...(form.boothNumber      ? [`• Kiosque / emplacement : ${form.boothNumber}`] : []),
-    ...(form.camionElectrique ? [`• Véhicule : Camion électrique requis`]        : []),
+    ...(form.camionElectrique ? [`• Véhicule : Camion électrique requis`] : []),
+    `• Type d'événement : ${form.isOutdoor ? 'Extérieur' : 'Intérieur'}`,
     `📆 ${firstDateStr || "—"}`,
     `📍 ${form.adresse || "—"}`,
     `• Stationnement : En rouge sur la carte ci-bas.`,
