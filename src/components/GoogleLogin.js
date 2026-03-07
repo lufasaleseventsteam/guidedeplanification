@@ -35,11 +35,11 @@ export default function GoogleLogin({ onLogin }) {
           }
         },
         hosted_domain: "lufa.com",
+        use_fedcm_for_prompt: false, // disable FedCM, use classic popup
       });
       setReady(true);
     };
 
-    // Load Google GSI script
     if (!document.querySelector('script[src*="accounts.google.com/gsi"]')) {
       const s = document.createElement("script");
       s.src = "https://accounts.google.com/gsi/client";
