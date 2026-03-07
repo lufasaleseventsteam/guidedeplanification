@@ -208,7 +208,7 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
           <DayEditor key={day.id} day={day} index={i}
             onChange={v => updateDay(day.id, v)}
             onRemove={() => removeDay(day.id)}
-            hideDate={form.isRecurring || false} />
+            isRecurring={form.isRecurring || false} />
         ))}
       </Card>
 
