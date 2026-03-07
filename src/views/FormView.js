@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { PALETTE, inp } from "../constants";
 import { blankDay, blankActivity, uid, readFileAsDataURL, defaultForm } from "../helpers";
 import DayEditor from "../components/DayEditor";
@@ -32,85 +32,14 @@ function ImageCard({ img, onChange, onRemove }) {
 }
 
 function AddressField({ value, onChange }) {
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const debounceRef = useRef();
-
-  const handleInput = (val) => {
-    onChange(val);
-    clearTimeout(debounceRef.current);
-    if (val.length < 4) { setSuggestions([]); return; }
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&countrycodes=ca&limit=5&addressdetails=1`,
-          { headers: { "Accept-Language": "fr" } }
-        );
-        const data = await res.json();
-        setSuggestions(data.map(d => d.display_name));
-        setShowSuggestions(true);
-      } catch(e) { setSuggestions([]); }
-    }, 350);
-  };
-
-  const pickSuggestion = (s) => {
-    onChange(s);
-    setSuggestions([]);
-    setShowSuggestions(false);
-  };
-
-  // OSM map preview
-  const mapSrc = value
-    ? `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(value)}&layer=mapnik&marker=${encodeURIComponent(value)}`
-    : null;
-  const osmUrl = value
-    ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(value)}`
-    : null;
-  const googleMapsUrl = value
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(value)}`
-    : null;
-
   return (
-    <div style={{ position: "relative" }}>
-      <input
-        value={value}
-        onChange={e => handleInput(e.target.value)}
-        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-        onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-        placeholder="ex: 3254 Bd Sainte-Rose, Laval, QC H7P 4L7"
-        autoComplete="off"
-        style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 7, padding: "8px 12px", color: "#e8f0e9", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
-      />
-      {/* Autocomplete dropdown */}
-      {showSuggestions && suggestions.length > 0 && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 100, background: "#1a2b1c", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, marginTop: 4, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
-          {suggestions.map((s, i) => (
-            <div key={i} onMouseDown={() => pickSuggestion(s)}
-              style={{ padding: "9px 12px", fontSize: 12, color: "#e8f0e9", cursor: "pointer", borderBottom: i < suggestions.length - 1 ? "1px solid rgba(255,255,255,0.07)" : "none" }}
-              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
-              onMouseLeave={e => e.currentTarget.style.background = "none"}>
-              📍 {s}
-            </div>
-          ))}
-        </div>
-      )}
-      {/* Map preview */}
-      {value && value.length > 8 && (
-        <div style={{ marginTop: 10, borderRadius: 8, overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)", position: "relative" }}>
-          <iframe
-            title="Aperçu carte"
-            src={`https://www.openstreetmap.org/export/embed.html?layer=mapnik&query=${encodeURIComponent(value)}`}
-            width="100%" height="200"
-            style={{ border: 0, display: "block" }}
-            loading="lazy"
-          />
-          <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer"
-            style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.75)", color: "#fff", fontSize: 11, padding: "4px 10px", borderRadius: 6, textDecoration: "none", fontWeight: 600 }}>
-            Google Maps →
-          </a>
-        </div>
-      )}
-    </div>
+    <input
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder="ex: 3254 Bd Sainte-Rose, Laval, QC H7P 4L7"
+      autoComplete="off"
+      style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 7, padding: "8px 12px", color: "#e8f0e9", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+    />
   );
 }
 
