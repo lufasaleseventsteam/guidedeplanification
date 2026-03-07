@@ -79,10 +79,10 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
           Les Fermes Lufa
         </div>
 
-        {/* User info + logout */}
+        {/* User info + logout — always shown */}
         <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-          {user?.picture && <img src={user.picture} alt={user?.name} style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.2)" }} />}
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{user?.name || ""}</span>
+          {user && user.picture && <img src={user.picture} alt={user.name} style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.2)" }} />}
+          {user && user.name && <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{user.name}</span>}
           <button onClick={() => { clearSession(); onSignOut(); }}
             style={{ background: "rgba(239,83,80,0.15)", border: "1px solid rgba(239,83,80,0.3)", borderRadius: 6, color: "#ef9a9a", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: "5px 12px" }}>
             Déconnexion
@@ -95,7 +95,7 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
       </div>
 
       {/* Search bar */}
-      {events.length > 0 && (
+      {events.length >= 0 && (
         <div style={{ marginBottom: 20, position: "relative" }}>
           <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: "rgba(255,255,255,0.3)" }}>🔍</span>
           <input
