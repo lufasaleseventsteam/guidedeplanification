@@ -183,7 +183,7 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
           </label>
           {form.isRecurring && (
             <div style={{ marginTop: 10 }}>
-              <Inp value={form.recurringNote || ""} onChange={set("recurringNote")} placeholder="ex: Chaque samedi et dimanche, de janvier à mars" />
+              <Inp value={form.recurringNote || ""} onChange={set("recurringNote")} placeholder="ex: Samedis et dimanches, janvier à mars (optionnel)" />
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 4, fontStyle: "italic" }}>
                 Les journées ci-dessous représentent l'horaire type (sans dates fixes)
               </div>
