@@ -79,12 +79,15 @@ export async function signInWithGoogle() {
       hosted_domain: "lufa.com", // only allow @lufa.com
     });
 
-    // Trigger the One Tap prompt
+    // Trigger the One Tap prompt — reject if dismissed so the button shows
     client.prompt((notification) => {
       if (notification.isSkippedMoment() || notification.isDismissedMoment()) {
-        // If One Tap dismissed, show the button — handled by the UI
+        rej(new Error("ONE_TAP_DISMISSED"));
       }
     });
+
+    // Fallback timeout — if nothing happens in 3s, show the button
+    setTimeout(() => rej(new Error("ONE_TAP_TIMEOUT")), 3000);
   });
 }
 
