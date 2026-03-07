@@ -31,10 +31,10 @@ function ActivityBlock({ act, onChange, onRemove, canRemove }) {
       {isTravel && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
           <Fld label="Départ" style={{ marginBottom: 0 }}>
-            <input type="time" value={act.departureTime || ""} onChange={e => set("departureTime")(e.target.value)} style={inp} />
+            <input autoComplete="off" type="time" value={act.departureTime || ""} onChange={e => set("departureTime")(e.target.value)} style={inp} />
           </Fld>
           <Fld label="Arrivée" style={{ marginBottom: 0 }}>
-            <input type="time" value={act.arrivalTime || ""} onChange={e => set("arrivalTime")(e.target.value)} style={inp} />
+            <input autoComplete="off" type="time" value={act.arrivalTime || ""} onChange={e => set("arrivalTime")(e.target.value)} style={inp} />
           </Fld>
           <Fld label="Note transport" style={{ marginBottom: 0 }}>
             <Inp value={act.transportNote || ""} onChange={set("transportNote")} placeholder="ex: Vol MTL→QC" />
@@ -46,10 +46,10 @@ function ActivityBlock({ act, onChange, onRemove, canRemove }) {
       {!isTravel && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
           <Fld label="De" style={{ marginBottom: 0 }}>
-            <input type="time" value={act.timeStart || ""} onChange={e => set("timeStart")(e.target.value)} style={inp} />
+            <input autoComplete="off" type="time" value={act.timeStart || ""} onChange={e => set("timeStart")(e.target.value)} style={inp} />
           </Fld>
           <Fld label="À" style={{ marginBottom: 0 }}>
-            <input type="time" value={act.timeEnd || ""} onChange={e => set("timeEnd")(e.target.value)} style={inp} />
+            <input autoComplete="off" type="time" value={act.timeEnd || ""} onChange={e => set("timeEnd")(e.target.value)} style={inp} />
           </Fld>
           <Fld label="Lieu" style={{ marginBottom: 0 }}>
             <Inp value={act.location || ""} onChange={set("location")} placeholder="Événement" />
@@ -110,7 +110,7 @@ export default function DayEditor({ day, onChange, onRemove, index }) {
         </div>
         <div style={{ flex: 1 }}>
           <Fld label="Date" style={{ marginBottom: 0 }}>
-            <input type="date" value={day.date || ""} onChange={e => set("date")(e.target.value)} style={inp} />
+            <input autoComplete="off" type="date" value={day.date || ""} onChange={e => set("date")(e.target.value)} style={inp} />
           </Fld>
         </div>
         <button onClick={onRemove} style={{ background: "rgba(239,83,80,0.18)", border: "1px solid rgba(239,83,80,0.35)", borderRadius: 6, color: "#ef9a9a", padding: "7px 12px", cursor: "pointer", fontSize: 12, flexShrink: 0, fontFamily: "inherit", fontWeight: 700 }}>

@@ -269,6 +269,20 @@ export async function generatePdf(form) {
   accessLines.forEach((line, i) => {
     doc.text(line, ML + 3, y + 5 + i * 4.5);
   });
+  if (form.adresse) {
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.adresse)}`;
+    const labelX = ML + 3;
+    const labelY = y + 5 + accessLines.length * 4.5;
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C.dark);
+    doc.text("• Itinéraire : ", labelX, labelY);
+    const linkX = labelX + doc.getTextWidth("• Itinéraire : ");
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(17, 85, 204);
+    doc.textWithLink("Ouvrir dans Google Maps", linkX, labelY, { url: mapsUrl });
+    doc.setTextColor(...C.dark);
+    y += 5;
+  }
   y += 22;
 
   // ── Contact + Docs ─────────────────────────────────────────────────────────

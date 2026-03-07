@@ -2,7 +2,7 @@ import React from "react";
 import { PALETTE, inp } from "../constants";
 
 export const Inp = ({ value, onChange, type = "text", placeholder, style = {} }) => (
-  <input type={type} value={value || ""} placeholder={placeholder}
+  <input autoComplete="off" type={type} value={value || ""} placeholder={placeholder}
     onChange={e => onChange(e.target.value)}
     style={{ ...inp, ...style }} />
 );
@@ -15,7 +15,7 @@ export const Sel = ({ value, onChange, options, style = {} }) => (
 );
 
 export const Txt = ({ value, onChange, rows = 3, placeholder }) => (
-  <textarea value={value || ""} rows={rows} placeholder={placeholder}
+  <textarea autoComplete="off" value={value || ""} rows={rows} placeholder={placeholder}
     onChange={e => onChange(e.target.value)}
     style={{ ...inp, resize: "vertical", lineHeight: 1.6 }} />
 );

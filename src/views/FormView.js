@@ -1,8 +1,28 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { PALETTE, inp } from "../constants";
 import { blankDay, blankActivity, uid, readFileAsDataURL, defaultForm } from "../helpers";
 import DayEditor from "../components/DayEditor";
 import { Inp, Txt, Fld, Card, SecTitle, Btn, BackBtn, PageWrap } from "../components/UI";
+
+const MAPS_API_KEY = "AIzaSyCpIHchz4OHd5spGMOT4esNHViW4Usf8P0";
+
+function loadMapsScript() {
+  return new Promise((res) => {
+    if (window.google?.maps?.places) { res(); return; }
+    if (document.querySelector('script[data-maps]')) {
+      // already loading, wait
+      const check = setInterval(() => {
+        if (window.google?.maps?.places) { clearInterval(check); res(); }
+      }, 100);
+      return;
+    }
+    const s = document.createElement("script");
+    s.setAttribute("data-maps", "1");
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_API_KEY}&libraries=places`;
+    s.onload = res;
+    document.head.appendChild(s);
+  });
+}
 
 function ImageCard({ img, onChange, onRemove }) {
   return (
@@ -16,7 +36,7 @@ function ImageCard({ img, onChange, onRemove }) {
               <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Largeur dans le doc</span>
               <span style={{ fontSize: 11, fontWeight: 700, color: PALETTE.greenLight }}>{img.width}%</span>
             </div>
-            <input type="range" min={20} max={100} step={5} value={img.width}
+            <input autoComplete="off" type="range" min={20} max={100} step={5} value={img.width}
               onChange={e => onChange({ ...img, width: parseInt(e.target.value) })}
               style={{ width: "100%", accentColor: PALETTE.greenLight, cursor: "pointer" }} />
             <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -27,6 +47,61 @@ function ImageCard({ img, onChange, onRemove }) {
         </div>
         <button onClick={onRemove} style={{ background: "rgba(239,83,80,0.15)", border: "1px solid rgba(239,83,80,0.3)", borderRadius: 6, color: "#ef9a9a", padding: "5px 9px", cursor: "pointer", fontSize: 12, flexShrink: 0 }}>✕</button>
       </div>
+    </div>
+  );
+}
+
+function AddressField({ value, onChange }) {
+  const inputRef = useRef();
+  const autocompleteRef = useRef();
+
+  useEffect(() => {
+    loadMapsScript().then(() => {
+      if (!inputRef.current || autocompleteRef.current) return;
+      autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+        types: ["address"],
+        componentRestrictions: { country: "ca" },
+      });
+      autocompleteRef.current.addListener("place_changed", () => {
+        const place = autocompleteRef.current.getPlace();
+        if (place.formatted_address) onChange(place.formatted_address);
+      });
+    });
+  }, []);
+
+  // Map preview URL
+  const mapSrc = value
+    ? `https://www.google.com/maps/embed/v1/place?key=${MAPS_API_KEY}&q=${encodeURIComponent(value)}`
+    : null;
+
+  return (
+    <div>
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder="ex: 3254 Bd Sainte-Rose, Laval, QC H7P 4L7"
+        autoComplete="off"
+        style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 7, padding: "8px 12px", color: "#e8f0e9", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+      />
+      {mapSrc && (
+        <div style={{ marginTop: 10, borderRadius: 8, overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)", position: "relative" }}>
+          <iframe
+            title="Aperçu carte"
+            src={mapSrc}
+            width="100%" height="200"
+            style={{ border: 0, display: "block" }}
+            allowFullScreen
+            loading="lazy"
+          />
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(value)}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.7)", color: "#fff", fontSize: 11, padding: "4px 10px", borderRadius: 6, textDecoration: "none", fontWeight: 600 }}>
+            Ouvrir dans Maps →
+          </a>
+        </div>
+      )}
     </div>
   );
 }
@@ -137,7 +212,7 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
       <Card>
         <SecTitle>📍 Lieu & logistique</SecTitle>
         <Fld label="Adresse principale">
-          <Inp value={form.adresse} onChange={set("adresse")} placeholder="ex: 3254 Bd Sainte-Rose, Laval, QC H7P 4L7" />
+          <AddressField value={form.adresse} onChange={set("adresse")} />
         </Fld>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Fld label="Numéro de kiosque / emplacement" style={{ marginBottom: 0 }}>
@@ -145,7 +220,7 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
           </Fld>
           <Fld label="Véhicule" style={{ marginBottom: 0 }}>
             <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 7, cursor: "pointer" }}>
-              <input type="checkbox" checked={form.camionElectrique || false} onChange={e => set("camionElectrique")(e.target.checked)}
+              <input autoComplete="off" type="checkbox" checked={form.camionElectrique || false} onChange={e => set("camionElectrique")(e.target.checked)}
                 style={{ width: 16, height: 16, accentColor: PALETTE.greenLight, cursor: "pointer", flexShrink: 0 }} />
               <span style={{ fontSize: 13, color: "#e8f0e9" }}>⚡ Camion électrique requis</span>
             </label>
@@ -214,7 +289,7 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
             style={{ width: "100%", background: "rgba(74,124,89,0.12)", border: "2px dashed rgba(74,124,89,0.4)", borderRadius: 8, padding: "12px", color: PALETTE.greenLight, cursor: "pointer", fontSize: 13, fontFamily: "inherit", fontWeight: 600, marginTop: 4 }}>
             + Ajouter une ou plusieurs images
           </button>
-          <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleMapUpload} style={{ display: "none" }} />
+          <input autoComplete="off" ref={fileRef} type="file" accept="image/*" multiple onChange={handleMapUpload} style={{ display: "none" }} />
         </Fld>
       </Card>
 

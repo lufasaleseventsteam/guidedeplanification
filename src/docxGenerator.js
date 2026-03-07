@@ -180,6 +180,13 @@ export async function generateDocx(form) {
         width: { size: 9360, type: WidthType.DXA }, borders: bords, margins: cmLg,
         children: [
           P([Tb("• Accès : "), T("Voir le plan d'accès ci-bas.")]),
+          ...(form.adresse ? [P([
+            Tb("• Itinéraire : "),
+            new ExternalHyperlink({
+              link: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.adresse || "")}`,
+              children: [T("Ouvrir dans Google Maps", { color: C.linkBlue, underline: {} })],
+            }),
+          ])] : []),
           firstDateStr ? P([T(`📆 ${firstDateStr}`)]) : sp(),
           P([T(`📍 ${form.adresse || "—"}`)]),
           P([Tb("• Stationnement : "), T("En rouge sur la carte ci-bas.")]),
