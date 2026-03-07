@@ -143,6 +143,9 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
               </div>
             </Fld>
           </div>
+          <div style={{ marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>
+            Entrez les données du Calcul d'Activations ici (optionnel)
+          </div>
         </div>
       </Card>
 
