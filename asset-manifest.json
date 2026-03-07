@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/guidedeplanification/static/js/main.ef0d5c3e.js",
+    "main.js": "/guidedeplanification/static/js/main.aec279c7.js",
     "index.html": "/guidedeplanification/index.html",
-    "main.ef0d5c3e.js.map": "/guidedeplanification/static/js/main.ef0d5c3e.js.map"
+    "main.aec279c7.js.map": "/guidedeplanification/static/js/main.aec279c7.js.map"
   },
   "entrypoints": [
-    "static/js/main.ef0d5c3e.js"
+    "static/js/main.aec279c7.js"
   ]
 }
