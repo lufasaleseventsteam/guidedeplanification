@@ -29,7 +29,7 @@ export function getSavedSession() {
   } catch { return null; }
 }
 
-function saveSession(user) {
+export function saveSession(user) {
   const session = {
     name:    user.name,
     email:   user.email,
