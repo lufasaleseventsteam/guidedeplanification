@@ -94,4 +94,3 @@ npm install
 npm start
 # Ouvre automatiquement http://localhost:3000
 ```
-    
