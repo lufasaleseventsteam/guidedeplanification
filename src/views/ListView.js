@@ -75,7 +75,7 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
             {user.picture && <img src={user.picture} alt={user.name} style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.15)" }} />}
             <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{user.name}</span>
             <button onClick={() => { clearSession(); onSignOut(); }}
-              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.25)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", marginLeft: 4 }}>
+              style={{ background: "rgba(239,83,80,0.12)", border: "1px solid rgba(239,83,80,0.25)", borderRadius: 6, color: "#ef9a9a", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", padding: "4px 10px" }}>
               Déconnexion
             </button>
           </div>
