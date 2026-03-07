@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { PALETTE } from "../constants";
-import { LOGO_B64 } from "../logo_lufa";
+import { LOGO_B64 } from "../logo_lufa.js";
 
 const CORRECT_PIN = "5832";
 const SESSION_KEY = "lufa-pin-unlocked";

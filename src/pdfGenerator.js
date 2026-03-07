@@ -1,3 +1,4 @@
+import { LOGO_B64 } from "./logo_lufa.js";
 import { DRIVE_LINKS, DAY_TYPE_LABELS } from "./constants";
 import { fmt24, formatDate, formatDateShort } from "./helpers";
 
@@ -67,7 +68,6 @@ export async function generatePdf(form) {
 
   // ── Logo ──────────────────────────────────────────────────────────────────
   try {
-    const { LOGO_B64 } = await import("../logo_lufa.js");
     const logoSize = 22;
     const logoX = ML + CW / 2 - logoSize / 2;
     doc.addImage(LOGO_B64, "PNG", logoX, y, logoSize, logoSize);
@@ -403,6 +403,8 @@ export async function generatePdf(form) {
     } catch(e) { /* skip */ }
   }
 
-  // ── Save ───────────────────────────────────────────────────────────────────
-  doc.save(`${safe}_${firstDay ? firstDay.date : "date"}.pdf`);
+  // ── Return blob ────────────────────────────────────────────────────────────
+  const fileName = `${safe}_${firstDay ? firstDay.date : "date"}.pdf`;
+  const blob = doc.output("blob");
+  return { blob, fileName, mimeType: "application/pdf" };
 }

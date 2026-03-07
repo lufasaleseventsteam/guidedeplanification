@@ -3,9 +3,10 @@ import { PALETTE } from "../constants";
 import { formatDateShort, getFirstDate } from "../helpers";
 import { Btn, PageWrap } from "../components/UI";
 import { exportData, importData } from "../storage";
-import { LOGO_B64 } from "../logo_lufa";
+import { clearSession } from "../googleAuth";
+import { LOGO_B64 } from "../logo_lufa.js";
 
-export default function ListView({ events, onNew, onDetail, onGenerate, generating, loading, onImport }) {
+export default function ListView({ events, onNew, onDetail, onGenerate, generating, loading, onImport, user, onSignOut }) {
   const importRef = useRef();
   const today     = new Date().toISOString().slice(0, 10);
 
@@ -67,6 +68,18 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
         <div style={{ marginTop: 20 }}>
           <Btn onClick={onNew}>+ Nouvel événement</Btn>
         </div>
+
+        {/* User info */}
+        {user && (
+          <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 10 }}>
+            {user.picture && <img src={user.picture} alt={user.name} style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.15)" }} />}
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{user.name}</span>
+            <button onClick={() => { clearSession(); onSignOut(); }}
+              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.25)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", marginLeft: 4 }}>
+              Déconnexion
+            </button>
+          </div>
+        )}
       </div>
 
       {loading ? (
