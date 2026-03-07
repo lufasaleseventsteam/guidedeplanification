@@ -63,8 +63,8 @@ function ActivityBlock({ act, onChange, onRemove, canRemove }) {
       {/* Signup objective for animation */}
       {isAnimation && (
         <div style={{ marginTop: 8 }}>
-          <Fld label="🎯 Objectif inscriptions (cette animation)" style={{ marginBottom: 0 }}>
-            <Inp value={act.signupObjective || ""} onChange={set("signupObjective")} placeholder="ex: 50 inscriptions (optionnel)" />
+          <Fld label="🎯 Objectif adhésions (cette animation)" style={{ marginBottom: 0 }}>
+            <Inp value={act.signupObjective || ""} onChange={set("signupObjective")} placeholder="ex: 50 adhésions (optionnel)" />
           </Fld>
         </div>
       )}

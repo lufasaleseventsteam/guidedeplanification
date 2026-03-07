@@ -95,15 +95,49 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
             <Inp value={form.bookedBy || ""} onChange={set("bookedBy")} placeholder="ex: Jean Dupont" />
           </Fld>
         </div>
+
+        {/* Performance metrics */}
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", color: PALETTE.greenLight, textTransform: "uppercase", marginBottom: 12 }}>
+            Objectifs & performance
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+            <Fld label="Objectif adhésions" style={{ marginBottom: 0 }}>
+              <Inp value={form.signupObjectiveTotal || ""} onChange={set("signupObjectiveTotal")} placeholder="ex: 20" type="number" min="0" />
+            </Fld>
+            <Fld label="Coût de l'événement ($)" style={{ marginBottom: 0 }}>
+              <Inp value={form.eventCost || ""} onChange={set("eventCost")} placeholder="ex: 2000" type="number" min="0" />
+            </Fld>
+            <Fld label="CPA (coût par adhésion)" style={{ marginBottom: 0 }}>
+              <div style={{
+                padding: "8px 12px", borderRadius: 7,
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                fontSize: 13, fontWeight: 700,
+                color: (() => {
+                  const obj = parseFloat(form.signupObjectiveTotal);
+                  const cost = parseFloat(form.eventCost);
+                  if (!obj || !cost) return "rgba(255,255,255,0.25)";
+                  const cpa = cost / obj;
+                  return cpa <= 50 ? "#7dc494" : cpa <= 150 ? "#ffe082" : "#ef9a9a";
+                })(),
+              }}>
+                {(() => {
+                  const obj = parseFloat(form.signupObjectiveTotal);
+                  const cost = parseFloat(form.eventCost);
+                  if (!obj || !cost) return "—";
+                  return `${(cost / obj).toFixed(2)} $`;
+                })()}
+              </div>
+            </Fld>
+          </div>
+        </div>
       </Card>
 
       <Card>
         <SecTitle>📍 Lieu</SecTitle>
-        <Fld label="Adresse principale">
+        <Fld label="Adresse principale" style={{ marginBottom: 0 }}>
           <Inp value={form.adresse} onChange={set("adresse")} placeholder="ex: 3254 Bd Sainte-Rose, Laval, QC H7P 4L7" />
-        </Fld>
-        <Fld label="🎯 Objectif inscriptions – total événement (optionnel)" style={{ marginBottom: 0 }}>
-          <Inp value={form.signupObjectiveTotal || ""} onChange={set("signupObjectiveTotal")} placeholder="ex: 150 inscriptions" />
         </Fld>
       </Card>
 

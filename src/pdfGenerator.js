@@ -93,16 +93,26 @@ export async function generatePdf(form) {
     y += 6;
   }
 
-  // ── Signup objective banner ────────────────────────────────────────────────
-  if (form.signupObjectiveTotal) {
-    spacer(2);
-    doc.setFillColor(...C.lightYellow);
-    doc.rect(ML, y, CW, 7, "F");
-    doc.setTextColor(...C.dark);
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.text(`🎯 OBJECTIF INSCRIPTIONS : ${form.signupObjectiveTotal}`, ML + CW / 2, y + 4.5, { align: "center" });
-    y += 7;
+  // ── Metrics banner ──────────────────────────────────────────────────────────
+  {
+    const obj  = parseFloat(form.signupObjectiveTotal);
+    const cost = parseFloat(form.eventCost);
+    const cpa  = obj && cost ? (cost / obj).toFixed(2) : null;
+    const parts = [
+      obj  ? `Objectif : ${obj} adhesions` : null,
+      cost ? `Cout : ${cost.toLocaleString("fr-CA")} $` : null,
+      cpa  ? `CPA cible : ${cpa} $` : null,
+    ].filter(Boolean);
+    if (parts.length) {
+      spacer(2);
+      doc.setFillColor(...C.lightYellow);
+      doc.rect(ML, y, CW, 7, "F");
+      doc.setTextColor(...C.dark);
+      doc.setFontSize(8.5);
+      doc.setFont("helvetica", "bold");
+      doc.text(parts.join("     |     "), ML + CW / 2, y + 4.5, { align: "center" });
+      y += 7;
+    }
   }
 
   // ── Schedule ───────────────────────────────────────────────────────────────

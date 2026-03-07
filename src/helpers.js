@@ -80,6 +80,7 @@ export const defaultForm = {
   wifi: "",
   wifiMdp: "",
   signupObjectiveTotal: "",
+  eventCost: "",             // cost of the event in $
   materielNecessaire: "CHARIOT\nTABLE\nNAPPE NOIRE 6'\nBANNIÈRE\nCAISSON DE BOIS\nSAVON + HUILE",
   materielFourni: "",
   instructions: "",
