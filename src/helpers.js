@@ -89,5 +89,8 @@ export const defaultForm = {
   boothNumber: "",          // numéro de kiosque / emplacement
   camionElectrique: false,  // checkbox véhicule électrique
   isOutdoor: false,         // indoor vs outdoor event
+  isRecurring: false,       // recurring event toggle
+  recurringNote: "",        // ex: chaque samedi et dimanche
+  isRecurring: false,       // recurring event — no dates needed
   days: [],
 };

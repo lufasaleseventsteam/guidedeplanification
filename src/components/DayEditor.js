@@ -88,7 +88,7 @@ function blankActivity(type = "animation") {
   };
 }
 
-export default function DayEditor({ day, onChange, onRemove, index }) {
+export default function DayEditor({ day, onChange, onRemove, index, isRecurring }) {
   const set = k => v => onChange({ ...day, [k]: v });
 
   const activities = day.activities || [];
@@ -109,9 +109,23 @@ export default function DayEditor({ day, onChange, onRemove, index }) {
           J{index + 1}
         </div>
         <div style={{ flex: 1 }}>
-          <Fld label="Date" style={{ marginBottom: 0 }}>
-            <input autoComplete="off" type="date" value={day.date || ""} onChange={e => set("date")(e.target.value)} style={inp} />
-          </Fld>
+          {isRecurring ? (
+            <Fld label="Jour de la semaine" style={{ marginBottom: 0 }}>
+              <Sel value={day.dayOfWeek || "lundi"} onChange={set("dayOfWeek")} options={[
+                { value: "lundi",    label: "Lundi" },
+                { value: "mardi",    label: "Mardi" },
+                { value: "mercredi", label: "Mercredi" },
+                { value: "jeudi",    label: "Jeudi" },
+                { value: "vendredi", label: "Vendredi" },
+                { value: "samedi",   label: "Samedi" },
+                { value: "dimanche", label: "Dimanche" },
+              ]} />
+            </Fld>
+          ) : (
+            <Fld label="Date" style={{ marginBottom: 0 }}>
+              <input autoComplete="off" type="date" value={day.date || ""} onChange={e => set("date")(e.target.value)} style={inp} />
+            </Fld>
+          )}
         </div>
         <button onClick={onRemove} style={{ background: "rgba(239,83,80,0.18)", border: "1px solid rgba(239,83,80,0.35)", borderRadius: 6, color: "#ef9a9a", padding: "7px 12px", cursor: "pointer", fontSize: 12, flexShrink: 0, fontFamily: "inherit", fontWeight: 700 }}>
           🗑 Supprimer

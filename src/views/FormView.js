@@ -173,6 +173,32 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
           <SecTitle style={{ marginBottom: 0 }}>📅 Horaire — {form.days.length} jour{form.days.length !== 1 ? "s" : ""}</SecTitle>
           <Btn onClick={addDay} variant="subtle" small>+ Journée</Btn>
         </div>
+
+        {/* Recurring toggle */}
+        <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+            <input type="checkbox" checked={form.isRecurring || false} onChange={e => set("isRecurring")(e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: PALETTE.greenLight, cursor: "pointer", flexShrink: 0 }} autoComplete="off" />
+            <span style={{ fontSize: 13, color: "#e8f0e9", fontWeight: 600 }}>🔁 Activation récurrente</span>
+          </label>
+          {form.isRecurring && (
+            <div style={{ marginTop: 10 }}>
+              <Inp value={form.recurringNote || ""} onChange={set("recurringNote")} placeholder="ex: Chaque samedi et dimanche, de janvier à mars" />
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 4, fontStyle: "italic" }}>
+                Les journées ci-dessous représentent l'horaire type (sans dates fixes)
+              </div>
+            </div>
+          )}
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+            <input type="checkbox" checked={form.isRecurring || false} onChange={e => set("isRecurring")(e.target.checked)}
+              style={{ width: 15, height: 15, accentColor: PALETTE.greenLight, cursor: "pointer", flexShrink: 0 }} />
+            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
+              Activation récurrente — cochez si l'horaire se répète (les dates ne sont pas requises)
+            </span>
+          </label>
+        </div>
         {form.days.length === 0 && (
           <div style={{ textAlign: "center", padding: "18px 0", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
             Aucune journée. Cliquez sur "+ Journée" pour commencer.
@@ -181,7 +207,8 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
         {form.days.map((day, i) => (
           <DayEditor key={day.id} day={day} index={i}
             onChange={v => updateDay(day.id, v)}
-            onRemove={() => removeDay(day.id)} />
+            onRemove={() => removeDay(day.id)}
+            hideDate={form.isRecurring || false} />
         ))}
       </Card>
 
