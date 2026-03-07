@@ -21,7 +21,7 @@ export const Txt = ({ value, onChange, rows = 3, placeholder }) => (
 );
 
 export const Lbl = ({ children }) => (
-  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(255,255,255,0.38)", textTransform: "uppercase", marginBottom: 5 }}>
+  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "rgba(255,255,255,0.65)", textTransform: "uppercase", marginBottom: 5 }}>
     {children}
   </div>
 );
@@ -40,7 +40,7 @@ export const Card = ({ children, style = {} }) => (
 );
 
 export const SecTitle = ({ children, style = {} }) => (
-  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.14em", color: PALETTE.greenLight, textTransform: "uppercase", marginBottom: 14, ...style }}>
+  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.14em", color: "#7dc494", textTransform: "uppercase", marginBottom: 14, ...style }}>
     {children}
   </div>
 );
@@ -48,7 +48,7 @@ export const SecTitle = ({ children, style = {} }) => (
 export const Btn = ({ children, onClick, disabled, variant = "primary", small, full }) => {
   const variants = {
     primary: { background: disabled ? "rgba(74,124,89,0.35)" : `linear-gradient(135deg, ${PALETTE.greenLight}, ${PALETTE.green})`, color: "#fff", border: "none" },
-    ghost:   { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.65)", border: "1px solid rgba(255,255,255,0.1)" },
+    ghost:   { background: "rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.82)", border: "1px solid rgba(255,255,255,0.1)" },
     danger:  { background: "rgba(239,83,80,0.12)", color: "#ef9a9a", border: "1px solid rgba(239,83,80,0.22)" },
     subtle:  { background: "rgba(74,124,89,0.18)", color: PALETTE.greenLight, border: `1px solid rgba(74,124,89,0.3)` },
   };
@@ -75,7 +75,7 @@ export const BackBtn = ({ onClick }) => (
 export const PageWrap = ({ children }) => (
   <div style={{
     minHeight: "100vh",
-    background: `linear-gradient(160deg, ${PALETTE.bg} 0%, #121e14 60%, #0d1820 100%)`,
+    background: `linear-gradient(160deg, #151f17 0%, #1a2b1c 60%, #142018 100%)`,
     fontFamily: "'DM Sans','Segoe UI',sans-serif", color: "#fff", padding: "24px 18px",
   }}>
     <div style={{ maxWidth: 740, margin: "0 auto" }}>{children}</div>

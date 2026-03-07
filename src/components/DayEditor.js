@@ -39,7 +39,7 @@ export default function DayEditor({ day, onChange, onRemove, index }) {
             </Fld>
           )}
         </div>
-        <button onClick={onRemove} style={{ background: "rgba(239,83,80,0.1)", border: "none", borderRadius: 6, color: "#ef9a9a", padding: "6px 10px", cursor: "pointer", fontSize: 13, flexShrink: 0, marginTop: 18 }}>✕</button>
+        <button onClick={onRemove} style={{ background: "rgba(239,83,80,0.18)", border: "1px solid rgba(239,83,80,0.35)", borderRadius: 6, color: "#ef9a9a", padding: "8px 12px", cursor: "pointer", fontSize: 12, flexShrink: 0, marginTop: 16, fontWeight: 700, fontFamily: "inherit" }}>🗑 Supprimer</button>
       </div>
 
       {/* Travel fields */}

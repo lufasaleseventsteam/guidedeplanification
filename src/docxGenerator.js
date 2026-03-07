@@ -67,7 +67,14 @@ export async function generateDocx(form) {
       width: { size: 9360, type: WidthType.DXA },
       shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords,
       margins: { top: 180, bottom: 180, left: 160, right: 160 },
-      children: [P([Tb(`EVENT : ${form.eventName || "—"}`, { color: C.white, size: 28 })], { alignment: AlignmentType.CENTER })],
+      children: [
+        P([Tb(`EVENT : ${form.eventName || "—"}`, { color: C.white, size: 28 })], { alignment: AlignmentType.CENTER }),
+        ...(form.createdBy || form.bookedBy ? [P([
+          T(form.createdBy ? `Guide : ${form.createdBy}` : "", { color: C.white, size: 16 }),
+          T(form.createdBy && form.bookedBy ? "   |   " : "", { color: C.white, size: 16 }),
+          T(form.bookedBy  ? `Réservé par : ${form.bookedBy}` : "", { color: C.white, size: 16 }),
+        ], { alignment: AlignmentType.CENTER })] : []),
+      ],
     })] })],
   });
 
@@ -93,7 +100,13 @@ export async function generateDocx(form) {
     ]}),
   ];
 
-  for (const day of (form.days || [])) {
+  const filledDays = (form.days || []).filter(day => {
+    const isTrav = day.type === "travel_depart" || day.type === "travel_return";
+    if (isTrav) return day.departureTime || day.arrivalTime || day.date;
+    return day.date || (day.rows || []).some(r => r.timeStart || r.activity);
+  });
+
+  for (const day of filledDays) {
     const dateStr  = formatDate(day.date);
     const isTravel = day.type === "travel_depart" || day.type === "travel_return";
     const isAnim   = day.type === "animation";
@@ -261,19 +274,21 @@ export async function generateDocx(form) {
     }),
   ];
 
-  if (form.mapImageData) {
+  for (const img of (form.mapImages || [])) {
     try {
-      const base64 = form.mapImageData.split(",")[1];
+      const base64 = img.data.split(",")[1];
       const binary = atob(base64);
       const bytes  = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const ext = (form.mapImageName || "map.png").split(".").pop().toLowerCase();
+      const ext = (img.name || "map.png").split(".").pop().toLowerCase();
+      const maxW = 9360; // content width in DXA (1440 per inch, 6.5in = 9360)
+      const pxW  = Math.round((img.width / 100) * 460);
       mapChildren.push(P([new ImageRun({
         data: bytes,
         type: { png: "png", jpg: "jpg", jpeg: "jpg", gif: "gif", webp: "webp" }[ext] || "png",
-        transformation: { width: 460, height: 580 },
-      })], { spacing: { before: 120 } }));
-    } catch(e) { /* skip image on error */ }
+        transformation: { width: pxW, height: Math.round(pxW * 1.3) },
+      })], { spacing: { before: 100, after: 60 } }));
+    } catch(e) { /* skip */ }
   }
 
   // ── Assemble ───────────────────────────────────────────────────────────────

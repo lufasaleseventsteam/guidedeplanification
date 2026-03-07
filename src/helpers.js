@@ -62,18 +62,19 @@ export function blankDay(type = "animation") {
 
 export const defaultForm = {
   eventName: "",
+  createdBy: "",          // person who filled the guide
+  bookedBy: "",           // person who booked the event
   adresse: "",
   montageAccesFrom: "7h00 AM",
   contactNom: "",
   contactTel: "",
   wifi: "",
   wifiMdp: "",
-  signupObjectiveTotal: "",   // global signup objective for the whole event
+  signupObjectiveTotal: "",
   materielNecessaire: "CHARIOT\nTABLE\nNAPPE NOIRE 6'\nBANNIÈRE\nCAISSON DE BOIS\nSAVON + HUILE",
   materielFourni: "",
   instructions: "Accéder au débarcadère dans un premier lieu afin de déposer le matériel et aller vous stationner dans les parties rouges. Le contact sur place vous indiquera l'emplacement de notre kiosque.",
   notesInternes: "",
-  mapImageData: null,
-  mapImageName: "",
+  mapImages: [],          // array of { id, data, name, width } — replaces mapImageData/mapImageName
   days: [],
 };

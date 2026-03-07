@@ -18,20 +18,23 @@ export const DAY_TYPE_LABELS = Object.fromEntries(DAY_TYPES.map(d => [d.value, d
 
 export const PALETTE = {
   green:      "#4a7c59",
-  greenLight: "#6aaa80",
+  greenLight: "#7dc494",
   greenDark:  "#2d5a3d",
-  bg:         "#0f1a12",
-  bgCard:     "rgba(255,255,255,0.04)",
-  border:     "rgba(255,255,255,0.09)",
+  bg:         "#151f17",
+  bgCard:     "rgba(255,255,255,0.07)",
+  border:     "rgba(255,255,255,0.14)",
+  text:       "#e8f0e9",
+  textMuted:  "#9bbfa3",
+  label:      "#7dc494",
 };
 
 export const inp = {
   width: "100%",
-  background: "rgba(0,0,0,0.3)",
-  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.07)",
+  border: "1px solid rgba(255,255,255,0.18)",
   borderRadius: 7,
   padding: "8px 12px",
-  color: "#fff",
+  color: "#e8f0e9",
   fontSize: 13,
   fontFamily: "inherit",
   outline: "none",

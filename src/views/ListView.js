@@ -6,6 +6,7 @@ import { exportData, importData } from "../storage";
 
 export default function ListView({ events, onNew, onDetail, onGenerate, generating, loading, onImport }) {
   const importRef = useRef();
+  const [formatPick, setFormatPick] = React.useState(null); // ev to generate
   const today     = new Date().toISOString().slice(0, 10);
 
   const sorted   = [...events].sort((a, b) => (getFirstDate(a) || "9999").localeCompare(getFirstDate(b) || "9999"));
@@ -51,8 +52,8 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
         </div>
 
         <div style={{ display: "flex", gap: 7, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-          <Btn onClick={() => onGenerate(ev)} disabled={generating === ev.id} small>
-            {generating === ev.id ? "⏳" : "⬇️ .docx"}
+          <Btn onClick={() => setFormatPick(ev)} disabled={generating === ev.id} small>
+            {generating === ev.id ? "⏳" : "⬇️"}
           </Btn>
         </div>
       </div>
@@ -107,6 +108,27 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
       )}
 
       {/* Footer: export / import */}
+      {/* Format picker modal */}
+      {formatPick && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+          <div style={{ background: "#1a2a1b", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 14, padding: 28, maxWidth: 320, textAlign: "center", width: "90%" }}>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Choisir le format</div>
+            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 20 }}>{formatPick.eventName}</div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 14 }}>
+              <button onClick={() => { onGenerate(formatPick, "pdf");  setFormatPick(null); }}
+                style={{ flex: 1, padding: "14px 10px", background: "linear-gradient(135deg, #6aaa80, #4a7c59)", border: "none", borderRadius: 10, color: "#fff", fontFamily: "inherit", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                📄 PDF
+              </button>
+              <button onClick={() => { onGenerate(formatPick, "docx"); setFormatPick(null); }}
+                style={{ flex: 1, padding: "14px 10px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, color: "#fff", fontFamily: "inherit", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                📝 Word
+              </button>
+            </div>
+            <button onClick={() => setFormatPick(null)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Annuler</button>
+          </div>
+        </div>
+      )}
+
       <div style={{ marginTop: 36, paddingTop: 16, borderTop: `1px solid ${PALETTE.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>
           Lufa Farms · Fiches de coordination terrain

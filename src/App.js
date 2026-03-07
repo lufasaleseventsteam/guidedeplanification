@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { uid } from "./helpers";
 import { loadEvents, saveEvents } from "./storage";
 import { generateDocx } from "./docxGenerator";
+import { generatePdf }  from "./pdfGenerator";
 import ListView   from "./views/ListView";
 import FormView   from "./views/FormView";
 import DetailView from "./views/DetailView";
@@ -46,10 +47,12 @@ export default function App() {
     setView("list");
   };
 
-  const handleGenerate = async ev => {
+  const handleGenerate = async (ev, format = "pdf") => {
     setGenerating(ev.id);
-    try { await generateDocx(ev); }
-    catch(e) { alert("Erreur lors de la génération : " + e.message); }
+    try {
+      if (format === "docx") await generateDocx(ev);
+      else await generatePdf(ev);
+    } catch(e) { alert("Erreur lors de la génération : " + e.message); }
     setGenerating(null);
   };
 
