@@ -154,3 +154,61 @@ export function signOut() {
   _accessToken = null;
   _tokenExpiry = 0;
 }
+
+// ── Shared events database ───────────────────────────────────────────────────
+const DB_FILE_NAME = "events-db.json";
+
+async function findDbFile() {
+  const token = await getAccessToken();
+  const q = `name='${DB_FILE_NAME}' and '${PARENT_FOLDER}' in parents and trashed=false`;
+  const resp = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const data = await resp.json();
+  return data.files?.[0] || null;
+}
+
+export async function loadEventsFromDrive() {
+  try {
+    const token = await getAccessToken();
+    const file = await findDbFile();
+    if (!file) return []; // no DB yet — fresh start
+    const resp = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    console.error("loadEventsFromDrive error:", e);
+    return [];
+  }
+}
+
+export async function saveEventsToDrive(events) {
+  const token = await getAccessToken();
+  const blob = new Blob([JSON.stringify(events)], { type: "application/json" });
+  const existing = await findDbFile();
+
+  if (existing) {
+    // Update existing file
+    const form = new FormData();
+    form.append("metadata", new Blob([JSON.stringify({ name: DB_FILE_NAME })], { type: "application/json" }));
+    form.append("file", blob, DB_FILE_NAME);
+    await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files/${existing.id}?uploadType=multipart`,
+      { method: "PATCH", headers: { Authorization: `Bearer ${token}` }, body: form }
+    );
+  } else {
+    // Create new file
+    const form = new FormData();
+    form.append("metadata", new Blob([JSON.stringify({ name: DB_FILE_NAME, parents: [PARENT_FOLDER] })], { type: "application/json" }));
+    form.append("file", blob, DB_FILE_NAME);
+    await fetch(
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+      { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form }
+    );
+  }
+}

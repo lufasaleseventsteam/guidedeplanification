@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { uid } from "./helpers";
-import { loadEvents, saveEvents } from "./storage";
+import { loadEvents, saveEvents } from "./storage"; // kept as fallback
+import { saveToDrive, loadEventsFromDrive, saveEventsToDrive } from "./googleDrive";
 import { generateDocx } from "./docxGenerator";
 import { generatePdf }  from "./pdfGenerator";
-import { saveToDrive }  from "./googleDrive";
+
 import { saveAs }       from "file-saver";
 import ListView   from "./views/ListView";
 import FormView   from "./views/FormView";
@@ -22,29 +23,43 @@ export default function App() {
   const [loading,    setLoading]    = useState(true);
 
   useEffect(() => {
-    setEvents(loadEvents());
-    setLoading(false);
-  }, []);
+    if (!user) { setLoading(false); return; }
+    setLoading(true);
+    loadEventsFromDrive()
+      .then(evs => {
+        setEvents(evs.length > 0 ? evs : loadEvents()); // fallback to localStorage if Drive empty
+        setLoading(false);
+      })
+      .catch(() => {
+        setEvents(loadEvents()); // fallback to localStorage on error
+        setLoading(false);
+      });
+  }, [user]);
 
-  const persist = updated => {
+  const persist = async updated => {
     setEvents(updated);
-    saveEvents(updated);
+    saveEvents(updated); // keep localStorage as backup
+    try {
+      await saveEventsToDrive(updated);
+    } catch(e) {
+      console.error("saveEventsToDrive error:", e);
+    }
   };
 
-  const handleSave = form => {
+  const handleSave = async form => {
     let updated;
     if (editingId) {
       updated = events.map(e => e.id === editingId ? { ...form, id: editingId, updatedAt: Date.now() } : e);
     } else {
       updated = [{ ...form, id: `evt-${uid()}`, createdAt: Date.now(), updatedAt: Date.now() }, ...events];
     }
-    persist(updated);
+    await persist(updated);
     setEditingId(null);
     setView(detailId ? "detail" : "list");
   };
 
-  const handleDelete = id => {
-    persist(events.filter(e => e.id !== id));
+  const handleDelete = async id => {
+    await persist(events.filter(e => e.id !== id));
     setDetailId(null);
     setView("list");
   };
