@@ -9,7 +9,7 @@ import { LOGO_B64 } from "../logo_lufa.js";
 export default function ListView({ events, onNew, onDetail, onGenerate, generating, loading, onImport, user, onSignOut }) {
   const importRef  = useRef();
   const today      = new Date().toISOString().slice(0, 10);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(""); // v2
 
   // Filter by search
   const filtered = events.filter(ev => {
