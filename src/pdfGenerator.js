@@ -260,6 +260,8 @@ export async function generatePdf(form) {
   doc.setFont("helvetica", "normal");
   const accessLines = [
     `• Accès : Voir le plan d'accès ci-bas.`,
+    ...(form.boothNumber      ? [`• Kiosque / emplacement : ${form.boothNumber}`] : []),
+    ...(form.camionElectrique ? [`• Véhicule : Camion électrique requis`]        : []),
     `📆 ${firstDateStr || "—"}`,
     `📍 ${form.adresse || "—"}`,
     `• Stationnement : En rouge sur la carte ci-bas.`,
@@ -358,6 +360,24 @@ export async function generatePdf(form) {
     doc.text(line, ML + 3, y + 5 + i * 4.5);
   });
   y += logH;
+
+  // ── Inventory link ────────────────────────────────────────────────────────────
+  spacer(4);
+  checkPage(12);
+  doc.setFillColor(...C.lightGreen);
+  doc.rect(ML, y, CW, 8, "F");
+  doc.setDrawColor(...C.border);
+  doc.rect(ML, y, CW, 8, "S");
+  doc.setTextColor(...C.dark);
+  doc.setFontSize(8.5);
+  doc.setFont("helvetica", "bold");
+  doc.text("Checklist matériel : ", ML + 3, y + 5.2);
+  const invLinkX = ML + 3 + doc.getTextWidth("Checklist matériel : ");
+  doc.setTextColor(17, 85, 204);
+  doc.setFont("helvetica", "normal");
+  doc.textWithLink("Ouvrir l'inventaire de matériel", invLinkX, y + 5.2, { url: "https://lufasaleseventsteam.github.io/inventaire/" });
+  doc.setTextColor(...C.dark);
+  y += 8;
 
   // ── Notes internes ─────────────────────────────────────────────────────────
   if (form.notesInternes) {

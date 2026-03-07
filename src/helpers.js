@@ -86,5 +86,7 @@ export const defaultForm = {
   instructions: "",
   notesInternes: "",
   mapImages: [],
+  boothNumber: "",          // numéro de kiosque / emplacement
+  camionElectrique: false,  // checkbox véhicule électrique
   days: [],
 };

@@ -135,10 +135,22 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
       </Card>
 
       <Card>
-        <SecTitle>📍 Lieu</SecTitle>
-        <Fld label="Adresse principale" style={{ marginBottom: 0 }}>
+        <SecTitle>📍 Lieu & logistique</SecTitle>
+        <Fld label="Adresse principale">
           <Inp value={form.adresse} onChange={set("adresse")} placeholder="ex: 3254 Bd Sainte-Rose, Laval, QC H7P 4L7" />
         </Fld>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Fld label="Numéro de kiosque / emplacement" style={{ marginBottom: 0 }}>
+            <Inp value={form.boothNumber || ""} onChange={set("boothNumber")} placeholder="ex: Kiosque B-12, Allée 3" />
+          </Fld>
+          <Fld label="Véhicule" style={{ marginBottom: 0 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 7, cursor: "pointer" }}>
+              <input type="checkbox" checked={form.camionElectrique || false} onChange={e => set("camionElectrique")(e.target.checked)}
+                style={{ width: 16, height: 16, accentColor: PALETTE.greenLight, cursor: "pointer", flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: "#e8f0e9" }}>⚡ Camion électrique requis</span>
+            </label>
+          </Fld>
+        </div>
       </Card>
 
       <Card>
@@ -170,6 +182,13 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
 
       <Card>
         <SecTitle>📦 Matériel</SecTitle>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, padding: "10px 14px", background: "rgba(74,124,89,0.1)", border: "1px solid rgba(74,124,89,0.25)", borderRadius: 8 }}>
+          <span style={{ fontSize: 13, color: "#e8f0e9", fontWeight: 600 }}>📋 Checklist matériel</span>
+          <a href="https://lufasaleseventsteam.github.io/inventaire/" target="_blank" rel="noopener noreferrer"
+            style={{ fontSize: 12, color: PALETTE.greenLight, textDecoration: "none", fontWeight: 700, padding: "5px 12px", background: "rgba(74,124,89,0.2)", borderRadius: 6, border: "1px solid rgba(74,124,89,0.3)" }}>
+            Ouvrir l'inventaire →
+          </a>
+        </div>
         <Fld label="Matériel nécessaire (1 item par ligne)">
           <Txt value={form.materielNecessaire} onChange={set("materielNecessaire")} rows={6} />
         </Fld>

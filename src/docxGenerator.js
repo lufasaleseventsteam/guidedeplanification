@@ -213,6 +213,21 @@ export async function generateDocx(form) {
     ],
   });
 
+  // ── Inventory link ───────────────────────────────────────────────────────────
+  const invUrl = "https://lufasaleseventsteam.github.io/inventaire/";
+  const inventorySection = new Table({
+    width: { size: 9360, type: WidthType.DXA }, columnWidths: [9360],
+    rows: [new TableRow({ children: [new TableCell({
+      width: { size: 9360, type: WidthType.DXA },
+      shading: { fill: C.lightGreen, type: ShadingType.CLEAR },
+      borders: bords, margins: cmLg,
+      children: [P([
+        Tb("📋 Checklist matériel : ", { color: C.dark }),
+        new ExternalHyperlink({ link: invUrl, children: [T("Ouvrir l'inventaire de matériel", { color: C.linkBlue, underline: {} })] }),
+      ])],
+    })]})],
+  });
+
   // ── Logistics ──────────────────────────────────────────────────────────────
   const matNec  = (form.materielNecessaire || "").split("\n").filter(Boolean);
   const matFou  = (form.materielFourni     || "").split("\n").filter(Boolean);
