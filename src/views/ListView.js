@@ -6,7 +6,7 @@ import { exportData, importData } from "../storage";
 import { clearSession } from "../googleAuth";
 import { LOGO_B64 } from "../logo_lufa.js";
 
-export default function ListView({ events, onNew, onDetail, onGenerate, generating, loading, onImport, user, onSignOut, driveSyncing }) {
+export default function ListView({ events, onNew, onDetail, onGenerate, generating, loading, onImport, user, onSignOut, driveSyncing, onSync }) {
   const importRef  = useRef();
   const today      = new Date().toISOString().slice(0, 10);
   const [search, setSearch] = useState("");
@@ -75,25 +75,25 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
         <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: "#e8f0e9", marginBottom: 4 }}>
           Guide de Planification
         </div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", letterSpacing: "0.04em" }}>
           Les Fermes Lufa
-          {driveSyncing && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, color: PALETTE.greenLight, opacity: 0.7 }}>
-              <span style={{ width: 8, height: 8, borderRadius: "50%", border: "1.5px solid rgba(125,196,148,0.3)", borderTopColor: PALETTE.greenLight, display: "inline-block", animation: "spin 0.8s linear infinite" }} />
-              Syncing...
-            </span>
-          )}
         </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
         {/* User info + logout — always shown */}
         <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
           {user && user.picture && <img src={user.picture} alt={user.name} style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.2)" }} />}
           {user && user.name && <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{user.name}</span>}
+          <button onClick={onSync} disabled={driveSyncing}
+            style={{ background: "rgba(74,124,89,0.15)", border: "1px solid rgba(74,124,89,0.3)", borderRadius: 6, color: PALETTE.greenLight, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
+            {driveSyncing
+              ? <><span style={{ width: 10, height: 10, borderRadius: "50%", border: "2px solid rgba(125,196,148,0.3)", borderTopColor: PALETTE.greenLight, display: "inline-block", animation: "spin 0.8s linear infinite" }} /> Sync...</>
+              : "🔄 Sync"}
+          </button>
           <button onClick={() => { clearSession(); onSignOut(); }}
             style={{ background: "rgba(239,83,80,0.15)", border: "1px solid rgba(239,83,80,0.3)", borderRadius: 6, color: "#ef9a9a", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: "5px 12px" }}>
             Déconnexion
           </button>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
 
         <div style={{ marginTop: 16 }}>
