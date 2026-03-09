@@ -6,7 +6,7 @@ import { exportData, importData } from "../storage";
 import { clearSession } from "../googleAuth";
 import { LOGO_B64 } from "../logo_lufa.js";
 
-export default function ListView({ events, onNew, onDetail, onGenerate, generating, loading, onImport, user, onSignOut }) {
+export default function ListView({ events, onNew, onDetail, onGenerate, generating, loading, onImport, user, onSignOut, driveSyncing }) {
   const importRef  = useRef();
   const today      = new Date().toISOString().slice(0, 10);
   const [search, setSearch] = useState("");
@@ -75,9 +75,16 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
         <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: "#e8f0e9", marginBottom: 4 }}>
           Guide de Planification
         </div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", letterSpacing: "0.04em" }}>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: 6 }}>
           Les Fermes Lufa
+          {driveSyncing && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, color: PALETTE.greenLight, opacity: 0.7 }}>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", border: "1.5px solid rgba(125,196,148,0.3)", borderTopColor: PALETTE.greenLight, display: "inline-block", animation: "spin 0.8s linear infinite" }} />
+              Syncing...
+            </span>
+          )}
         </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
         {/* User info + logout — always shown */}
         <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>

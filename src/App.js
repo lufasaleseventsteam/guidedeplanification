@@ -24,6 +24,7 @@ export default function App() {
 
   // Load events from Drive on login — deferred so login session is not disturbed
   const [driveLoaded, setDriveLoaded] = useState(false);
+  const [driveSyncing, setDriveSyncing] = useState(false);
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
@@ -36,6 +37,7 @@ export default function App() {
   useEffect(() => {
     if (!user || driveLoaded) return;
     const timer = setTimeout(() => {
+      setDriveSyncing(true);
       loadEventsFromDrive()
         .then(evs => {
           if (evs.length > 0) {
@@ -43,8 +45,9 @@ export default function App() {
             saveEvents(evs);
           }
           setDriveLoaded(true);
+          setDriveSyncing(false);
         })
-        .catch(() => setDriveLoaded(true));
+        .catch(() => { setDriveLoaded(true); setDriveSyncing(false); });
     }, 2000);
     return () => clearTimeout(timer);
   }, [user, driveLoaded]);
@@ -183,6 +186,7 @@ export default function App() {
         onImport={handleImport}
         user={user}
         onSignOut={() => setUser(null)}
+        driveSyncing={driveSyncing}
       />
     </>
   );
