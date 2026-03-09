@@ -22,19 +22,32 @@ export default function App() {
   const [driveResult, setDriveResult] = useState(null); // { name, shareLink, fileName, blob, mimeType }
   const [loading,    setLoading]    = useState(true);
 
+  // Load events from Drive on login — deferred so login session is not disturbed
+  const [driveLoaded, setDriveLoaded] = useState(false);
+
   useEffect(() => {
     if (!user) { setLoading(false); return; }
-    setLoading(true);
-    loadEventsFromDrive()
-      .then(evs => {
-        setEvents(evs.length > 0 ? evs : loadEvents()); // fallback to localStorage if Drive empty
-        setLoading(false);
-      })
-      .catch(() => {
-        setEvents(loadEvents()); // fallback to localStorage on error
-        setLoading(false);
-      });
+    // Always load from localStorage first — instant, no OAuth needed
+    setEvents(loadEvents());
+    setLoading(false);
   }, [user]);
+
+  // Sync from Drive once, 2 seconds after login, so OAuth popup doesn't interfere with login
+  useEffect(() => {
+    if (!user || driveLoaded) return;
+    const timer = setTimeout(() => {
+      loadEventsFromDrive()
+        .then(evs => {
+          if (evs.length > 0) {
+            setEvents(evs);
+            saveEvents(evs);
+          }
+          setDriveLoaded(true);
+        })
+        .catch(() => setDriveLoaded(true));
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [user, driveLoaded]);
 
   const persist = async updated => {
     setEvents(updated);

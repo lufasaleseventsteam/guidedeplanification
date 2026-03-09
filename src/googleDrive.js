@@ -42,6 +42,11 @@ function isTokenValid() {
   return _accessToken && Date.now() < _tokenExpiry - 60000;
 }
 
+export function setAccessToken(token, expiresIn = 3600) {
+  _accessToken = token;
+  _tokenExpiry = Date.now() + expiresIn * 1000;
+}
+
 async function getAccessToken() {
   if (isTokenValid()) return _accessToken;
 
@@ -62,7 +67,7 @@ async function getAccessToken() {
         },
       });
     }
-    _tokenClient.requestAccessToken({ prompt: isTokenValid() ? "" : "consent" });
+    _tokenClient.requestAccessToken({ prompt: "" }); // never force consent screen
   });
 }
 
