@@ -9,24 +9,27 @@ import { DAY_TYPE_LABELS } from "./constants";
 import { fmt24, formatDate } from "./helpers";
 import { LOGO_B64 } from "./logo_lufa.js";
 
-// Doc colors matching the original Fête des semences doc
+// Colors extracted from the reference Lufa doc
 const C = {
-  headerGreen: "9BBB59",
-  lightGreen:  "D9EAD3",
-  lightYellow: "FFF2CC",
+  headerGreen: "b6d7a8",   // #b6d7a8 — light green section headers
+  darkGreen:   "38761d",   // #38761d — dark green text on headers
+  lightGreen:  "d9ead3",   // lighter green
+  lightYellow: "fff2cc",   // yellow banner
+  pink:        "f4cccc",   // #f4cccc — pink accent (travel rows)
   white:       "FFFFFF",
   dark:        "000000",
-  linkBlue:    "1155CC",
+  gray:        "434343",   // #434343 body text
+  linkBlue:    "1155cc",   // #1155cc hyperlinks
 };
 
-const bd    = { style: BorderStyle.SINGLE, size: 4, color: "AAAAAA" };
+const bd    = { style: BorderStyle.SINGLE, size: 4, color: "000000" };
 const bords = { top: bd, bottom: bd, left: bd, right: bd };
 const noBd  = { style: BorderStyle.NONE,   size: 0, color: "FFFFFF" };
 const noBds = { top: noBd, bottom: noBd, left: noBd, right: noBd };
 const cm    = { top: 60,  bottom: 60,  left: 100, right: 100 };
 const cmLg  = { top: 100, bottom: 100, left: 160, right: 160 };
 
-const T  = (text, o = {}) => new TextRun({ text: String(text || ""), font: "Calibri", size: 20, color: C.dark, ...o });
+const T  = (text, o = {}) => new TextRun({ text: String(text || ""), font: "Garamond", size: 22, color: C.gray, ...o });
 const Tb = (text, o = {}) => T(text, { bold: true, ...o });
 const P  = (runs, o = {}) => new Paragraph({ children: Array.isArray(runs) ? runs : [runs], ...o });
 const sp = ()              => P([T(" ", { size: 14 })], { spacing: { before: 40, after: 40 } });
@@ -35,7 +38,7 @@ const hdrCell = (text, width) => new TableCell({
   width: { size: width, type: WidthType.DXA },
   shading: { fill: C.headerGreen, type: ShadingType.CLEAR },
   borders: bords, margins: cm, verticalAlign: VerticalAlign.CENTER,
-  children: [P([Tb(text, { color: C.white, size: 18 })], { alignment: AlignmentType.CENTER })],
+  children: [P([Tb(text, { color: C.darkGreen, size: 20 })], { alignment: AlignmentType.CENTER })],
 });
 
 const bodyCell = (children, width, fill = C.white) => new TableCell({
@@ -51,13 +54,13 @@ const bannerTable = (text, totalWidth = 9360) => new Table({
     width: { size: totalWidth, type: WidthType.DXA },
     shading: { fill: C.headerGreen, type: ShadingType.CLEAR },
     borders: bords, margins: cm,
-    children: [P([Tb(text, { color: C.white, size: 20, allCaps: true })], { alignment: AlignmentType.CENTER })],
+    children: [P([Tb(text, { color: C.darkGreen, size: 20 })], { alignment: AlignmentType.LEFT })],
   })] })],
 });
 
 const hyperlink = (text, url) => new ExternalHyperlink({
   link: url,
-  children: [new TextRun({ text, style: "Hyperlink", size: 20, font: "Calibri", color: C.linkBlue, underline: {} })],
+  children: [new TextRun({ text, style: "Hyperlink", size: 22, font: "Garamond", color: C.linkBlue, underline: {} })],
 });
 
 export async function generateDocx(form) {
@@ -69,11 +72,11 @@ export async function generateDocx(form) {
       shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords,
       margins: { top: 180, bottom: 180, left: 160, right: 160 },
       children: [
-        P([Tb(`EVENT : ${form.eventName || "—"}`, { color: C.white, size: 28 })], { alignment: AlignmentType.CENTER }),
+        P([Tb(`EVENT: ${form.eventName || "—"}`, { color: C.darkGreen, size: 28 })], { alignment: AlignmentType.CENTER }),
         ...(form.createdBy || form.bookedBy ? [P([
-          T(form.createdBy ? `Guide : ${form.createdBy}` : "", { color: C.white, size: 16 }),
-          T(form.createdBy && form.bookedBy ? "   |   " : "", { color: C.white, size: 16 }),
-          T(form.bookedBy  ? `Réservé par : ${form.bookedBy}` : "", { color: C.white, size: 16 }),
+          T(form.createdBy ? `Guide : ${form.createdBy}` : "", { color: C.darkGreen, size: 18 }),
+          T(form.createdBy && form.bookedBy ? "   |   " : "", { color: C.darkGreen, size: 18 }),
+          T(form.bookedBy  ? `Réservé par : ${form.bookedBy}` : "", { color: C.darkGreen, size: 18 }),
         ], { alignment: AlignmentType.CENTER })] : []),
       ],
     })] })],
@@ -93,7 +96,7 @@ export async function generateDocx(form) {
   // ── Schedule ───────────────────────────────────────────────────────────────
   const schedRows = [
     new TableRow({ children: [
-      hdrCell("HORAIRE\n(montage, livraisons,\nanimation, démontage)", 2000),
+      hdrCell("Quand?", 2000),
       hdrCell("Quand?", 1600),
       hdrCell("Horaire", 2200),
       hdrCell("Où?", 1560),
@@ -174,7 +177,7 @@ export async function generateDocx(form) {
       new TableRow({ children: [new TableCell({
         width: { size: 9360, type: WidthType.DXA },
         shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm,
-        children: [P([Tb("ACCÈS AU SITE (MONTAGE) ET STATIONNEMENT", { color: C.white })])],
+        children: [P([Tb("ACCÈS AU SITE (MONTAGE) ET STATIONNEMENT", { color: C.darkGreen })])],
       })]}),
       new TableRow({ children: [new TableCell({
         width: { size: 9360, type: WidthType.DXA }, borders: bords, margins: cmLg,
@@ -200,8 +203,8 @@ export async function generateDocx(form) {
     width: { size: 9360, type: WidthType.DXA }, columnWidths: [4680, 4680],
     rows: [
       new TableRow({ children: [
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("CONTACT SUR PLACE", { color: C.white })])] }),
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("DOCUMENTS DE RÉFÉRENCE", { color: C.white })])] }),
+        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("CONTACT SUR PLACE", { color: C.darkGreen })])] }),
+        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("DOCUMENTS DE RÉFÉRENCE", { color: C.darkGreen })])] }),
       ]}),
       new TableRow({ children: [
         new TableCell({ width: { size: 4680, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [
@@ -245,8 +248,8 @@ export async function generateDocx(form) {
     width: { size: 9360, type: WidthType.DXA }, columnWidths: [4680, 4680],
     rows: [
       new TableRow({ children: [
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("LOGISTIQUE POUR MONTAGE",        { color: C.white })])] }),
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("LOGISTIQUE SURVEILLANCE DE NUIT", { color: C.white })])] }),
+        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("LOGISTIQUE POUR MONTAGE",        { color: C.darkGreen })])] }),
+        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("LOGISTIQUE SURVEILLANCE DE NUIT", { color: C.darkGreen })])] }),
       ]}),
       new TableRow({ children: [
         new TableCell({ width: { size: 4680, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [
@@ -332,7 +335,7 @@ export async function generateDocx(form) {
   ];
 
   const doc = new Document({
-    styles: { default: { document: { run: { font: "Calibri", size: 20, color: C.dark } } } },
+    styles: { default: { document: { run: { font: "Garamond", size: 22, color: C.gray } } } },
     sections: [{
       properties: {
         page: {
@@ -344,9 +347,11 @@ export async function generateDocx(form) {
     }],
   });
 
-  const buffer = await Packer.toBuffer(doc);
-  const blob   = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
-  const safe   = (form.eventName || "evenement").replace(/[^a-zA-Z0-9\-_àâéèêëîïôùûüç ]/g, "_").trim().replace(/ /g, "_");
-  const first  = (form.days || []).find(d => d.date);
-  saveAs(blob, `${safe}_${first ? first.date : "date"}.docx`);
+  const buffer   = await Packer.toBuffer(doc);
+  const blob     = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+  const safe     = (form.eventName || "evenement").replace(/[^a-zA-Z0-9\-_àâéèêëîïôùûüç ]/g, "_").trim().replace(/ /g, "_");
+  const first    = (form.days || []).find(d => d.date);
+  const fileName = `${safe}_${first ? first.date : "date"}.docx`;
+  const mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  return { blob, fileName, mimeType };
 }

@@ -2,12 +2,10 @@ import React, { useRef, useState } from "react";
 import { PALETTE } from "../constants";
 import { formatDateShort, getFirstDate } from "../helpers";
 import { Btn, PageWrap } from "../components/UI";
-import { exportData, importData } from "../storage";
 import { clearSession } from "../googleAuth";
 import { LOGO_B64 } from "../logo_lufa.js";
 
-export default function ListView({ events, onNew, onDetail, onGenerate, generating, loading, onImport, user, onSignOut, driveSyncing, onSync }) {
-  const importRef  = useRef();
+export default function ListView({ events, onNew, onDetail, onGenerate, generating, loading, onImport, user, onSignOut, driveSyncing, onSync, onDriveFolder, driveFolderLoading }) {
   const today      = new Date().toISOString().slice(0, 10);
   const [search, setSearch] = useState("");
 
@@ -26,13 +24,6 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
   const sorted   = [...filtered].sort((a, b) => (getFirstDate(a) || "9999").localeCompare(getFirstDate(b) || "9999"));
   const upcoming = sorted.filter(e => !getFirstDate(e) || getFirstDate(e) >= today);
   const past     = sorted.filter(e =>  getFirstDate(e) && getFirstDate(e) <  today).reverse();
-
-  const handleImportFile = async e => {
-    const file = e.target.files[0]; if (!file) return;
-    try { const evs = await importData(file); onImport(evs); }
-    catch(err) { alert("Erreur import : " + err.message); }
-    e.target.value = "";
-  };
 
   const EventCard = ({ ev }) => {
     const dates = (ev.days || []).filter(d => d.date).map(d => d.date).sort();
@@ -59,7 +50,7 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
           </div>
         </div>
         <div style={{ display: "flex", gap: 7, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-          <Btn onClick={() => onGenerate(ev)} disabled={generating === ev.id} small>
+          <Btn onClick={() => onGenerate(ev, "docx")} disabled={generating === ev.id} small>
             {generating === ev.id ? "⏳" : "⬇️"}
           </Btn>
         </div>
@@ -83,6 +74,10 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
         <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
           {user && user.picture && <img src={user.picture} alt={user.name} style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.2)" }} />}
           {user && user.name && <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{user.name}</span>}
+          <button onClick={onDriveFolder} disabled={driveFolderLoading}
+            style={{ background: "rgba(74,124,89,0.15)", border: "1px solid rgba(74,124,89,0.3)", borderRadius: 6, color: PALETTE.greenLight, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: "5px 12px" }}>
+            {driveFolderLoading ? "⏳" : "📂 Drive"}
+          </button>
           <button onClick={onSync} disabled={driveSyncing}
             style={{ background: "rgba(74,124,89,0.15)", border: "1px solid rgba(74,124,89,0.3)", borderRadius: 6, color: PALETTE.greenLight, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: "5px 12px", display: "flex", alignItems: "center", gap: 5 }}>
             {driveSyncing
@@ -154,15 +149,8 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
         </>
       )}
 
-      <div style={{ marginTop: 36, paddingTop: 16, borderTop: `1px solid ${PALETTE.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+      <div style={{ marginTop: 36, paddingTop: 16, borderTop: `1px solid ${PALETTE.border}`, textAlign: "center" }}>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>Les Fermes Lufa · Guides de planification terrain</div>
-        <div style={{ display: "flex", gap: 8 }}>
-          {events.length > 0 && (
-            <button onClick={exportData} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>↓ Exporter</button>
-          )}
-          <button onClick={() => importRef.current.click()} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>↑ Importer</button>
-          <input ref={importRef} type="file" accept=".json" onChange={handleImportFile} style={{ display: "none" }} />
-        </div>
       </div>
     </PageWrap>
   );

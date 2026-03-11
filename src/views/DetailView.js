@@ -3,9 +3,8 @@ import { DAY_TYPE_LABELS, PALETTE } from "../constants";
 import { fmt24, formatDate, formatDateShort } from "../helpers";
 import { Card, SecTitle, Btn, BackBtn, PageWrap, Lbl } from "../components/UI";
 
-export default function DetailView({ ev, onEdit, onDelete, onBack, onGenerate, generating }) {
+export default function DetailView({ ev, onEdit, onDelete, onBack, onGenerate, generating, onDuplicate }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [showFormat, setShowFormat] = useState(false);
 
   const dates     = (ev.days || []).filter(d => d.date).map(d => d.date).sort();
   const dateRange = dates.length > 1
@@ -23,6 +22,7 @@ export default function DetailView({ ev, onEdit, onDelete, onBack, onGenerate, g
           {ev.eventName}
         </h2>
         <Btn onClick={() => onEdit(ev)} variant="ghost" small>✏️ Modifier</Btn>
+        {onDuplicate && <Btn onClick={() => onDuplicate(ev)} variant="ghost" small>📋 Dupliquer</Btn>}
         <Btn onClick={() => setConfirmDelete(true)} variant="danger" small>Supprimer</Btn>
       </div>
 
@@ -130,8 +130,23 @@ export default function DetailView({ ev, onEdit, onDelete, onBack, onGenerate, g
       )}
 
       {/* Generate button */}
-      <Btn onClick={() => setShowFormat(true)} disabled={generating === ev.id} full>
-        {generating === ev.id ? "⏳ Génération en cours..." : "⬇️  Télécharger la fiche"}
+      {ev.driveLink && (
+        <div style={{ background: "rgba(74,124,89,0.1)", border: "1px solid rgba(74,124,89,0.25)", borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ flex: 1, fontSize: 11, color: "#7dc494", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {ev.driveLink}
+          </span>
+          <button onClick={() => navigator.clipboard.writeText(ev.driveLink)}
+            style={{ background: "rgba(74,124,89,0.3)", border: "none", borderRadius: 6, color: "#7dc494", padding: "5px 12px", cursor: "pointer", fontSize: 12, fontFamily: "inherit", whiteSpace: "nowrap", fontWeight: 700 }}>
+            📋 Copier
+          </button>
+          <a href={ev.driveLink} target="_blank" rel="noopener noreferrer"
+            style={{ background: "rgba(74,124,89,0.3)", borderRadius: 6, color: "#7dc494", padding: "5px 12px", fontSize: 12, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+            📂 Ouvrir
+          </a>
+        </div>
+      )}
+      <Btn onClick={() => onGenerate(ev, "docx")} disabled={generating === ev.id} full>
+        {generating === ev.id ? "⏳ Génération en cours..." : "⬇️  Régénérer la fiche (Word)"}
       </Btn>
 
       {/* Delete confirmation modal */}

@@ -217,3 +217,9 @@ export async function saveEventsToDrive(events) {
     );
   }
 }
+
+// ── Get current month's Drive folder URL ────────────────────────────────────
+export async function getMonthFolderUrl() {
+  const folderId = await getOrCreateMonthFolder();
+  return `https://drive.google.com/drive/folders/${folderId}`;
+}
