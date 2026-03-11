@@ -196,7 +196,10 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
         </Fld>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Fld label="Numéro de kiosque / emplacement" style={{ marginBottom: 0 }}>
-            <Inp value={form.boothNumber || ""} onChange={set("boothNumber")} placeholder="ex: Kiosque B-12, Allée 3" />
+<Inp value={form.boothNumber || ""} onChange={set("boothNumber")} placeholder="ex: Kiosque B-12, Allée 3" />
+          </Fld>
+          <Fld label="Stationnement (info spécifique)">
+            <Inp value={form.stationnement || ""} onChange={set("stationnement")} placeholder="ex: Entrée principale côté nord, cases réservées en rouge" />
           </Fld>
           <Fld label="Véhicule" style={{ marginBottom: 0 }}>
             <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 7, cursor: "pointer" }}>

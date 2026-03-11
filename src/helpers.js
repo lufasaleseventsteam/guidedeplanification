@@ -80,6 +80,7 @@ export const defaultForm = {
   createdBy: "",
   bookedBy: "",
   adresse: "",
+  stationnement: "",       // info stationnement
   contactNom: "",
   contactTel: "",
   wifi: "",

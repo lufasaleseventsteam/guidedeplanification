@@ -20,7 +20,7 @@ const C = {
   linkBlue:    "1155cc",   // #1155cc hyperlinks
 };
 
-const bd    = { style: BorderStyle.SINGLE, size: 4, color: "000000" };
+const bd    = { style: BorderStyle.SINGLE, size: 1, color: "bbbbbb" };
 const bords = { top: bd, bottom: bd, left: bd, right: bd };
 const noBd  = { style: BorderStyle.NONE,   size: 0, color: "FFFFFF" };
 const noBds = { top: noBd, bottom: noBd, left: noBd, right: noBd };
@@ -36,7 +36,7 @@ const hdrCell = (text, width) => new TableCell({
   width: { size: width, type: WidthType.DXA },
   shading: { fill: C.headerGreen, type: ShadingType.CLEAR },
   borders: bords, margins: cm, verticalAlign: VerticalAlign.CENTER,
-  children: [P([Tb(text, { color: C.darkGreen, size: 20 })], { alignment: AlignmentType.CENTER })],
+  children: [P([Tb(text, { color: "000000", size: 20 })], { alignment: AlignmentType.CENTER })],
 });
 
 const bodyCell = (children, width, fill = C.white) => new TableCell({
@@ -52,7 +52,7 @@ const bannerTable = (text, totalWidth = 9360) => new Table({
     width: { size: totalWidth, type: WidthType.DXA },
     shading: { fill: C.headerGreen, type: ShadingType.CLEAR },
     borders: bords, margins: cm,
-    children: [P([Tb(text, { color: C.darkGreen, size: 20 })], { alignment: AlignmentType.LEFT })],
+    children: [P([Tb(text, { color: "000000", size: 20 })], { alignment: AlignmentType.LEFT })],
   })] })],
 });
 
@@ -83,11 +83,11 @@ export async function generateDocx(form) {
       shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords,
       margins: { top: 180, bottom: 180, left: 160, right: 160 },
       children: [
-        P([Tb(`EVENT: ${form.eventName || "—"}`, { color: C.darkGreen, size: 28 })], { alignment: AlignmentType.CENTER }),
+        P([Tb(`EVENT: ${form.eventName || "—"}`, { color: "000000", size: 28 })], { alignment: AlignmentType.CENTER }),
         ...(form.createdBy || form.bookedBy ? [P([
-          T(form.createdBy ? `Guide : ${form.createdBy}` : "", { color: C.darkGreen, size: 18 }),
-          T(form.createdBy && form.bookedBy ? "   |   " : "", { color: C.darkGreen, size: 18 }),
-          T(form.bookedBy  ? `Réservé par : ${form.bookedBy}` : "", { color: C.darkGreen, size: 18 }),
+          T(form.createdBy ? `Guide : ${form.createdBy}` : "", { color: "000000", size: 18 }),
+          T(form.createdBy && form.bookedBy ? "   |   " : "", { color: "000000", size: 18 }),
+          T(form.bookedBy  ? `Réservé par : ${form.bookedBy}` : "", { color: "000000", size: 18 }),
         ], { alignment: AlignmentType.CENTER })] : []),
       ],
     })] })],
@@ -107,11 +107,11 @@ export async function generateDocx(form) {
   // ── Schedule ───────────────────────────────────────────────────────────────
   const schedRows = [
     new TableRow({ children: [
-      hdrCell("Date", 2000),
-      hdrCell("Horaire", 1600),
+      hdrCell("Date", 2200),
       hdrCell("Type", 2200),
+      hdrCell("Horaire", 1600),
       hdrCell("Où?", 1560),
-      hdrCell("Quoi?", 2000),
+      hdrCell("Quoi?", 1800),
     ]}),
   ];
 
@@ -132,6 +132,9 @@ export async function generateDocx(form) {
       : formatDate(day.date);
 
     const activities = (day.activities || []).filter(hasContent);
+    // Use a light grey for the date column to visually group the day
+    const dateBg = "efefef";
+
     activities.forEach((act, i) => {
       const isTravel = act.type === "travel_depart" || act.type === "travel_return";
       const actLabel = act.type === "custom"
@@ -141,7 +144,7 @@ export async function generateDocx(form) {
       let horaire = "";
       let quoi = "";
       let ou = act.location || "";
-      let bgColor = C.white;
+      let rowBg = C.white;
 
       if (isTravel) {
         horaire = [
@@ -149,30 +152,36 @@ export async function generateDocx(form) {
           act.arrivalTime   ? `Arrivée : ${fmt24(act.arrivalTime)}` : "",
         ].filter(Boolean).join("  |  ");
         quoi = act.transportNote || "";
-        bgColor = "CFE2F3";
+        rowBg = "dce8f8";
       } else {
         horaire = act.timeStart && act.timeEnd
           ? `${fmt24(act.timeStart)} – ${fmt24(act.timeEnd)}`
           : fmt24(act.timeStart) || "";
-        quoi = act.activityLabel || "";
-        bgColor = act.type === "animation" ? C.lightGreen : C.white;
+        quoi = (act.activityLabel || "").trim();
+        rowBg = act.type === "animation" ? C.lightGreen : C.white;
       }
 
+      // Date cell: only show text on first row, always grey bg to group the day
+      const dateCell = new TableCell({
+        width: { size: 2200, type: WidthType.DXA },
+        shading: { fill: dateBg, type: ShadingType.CLEAR },
+        borders: bords, margins: cm,
+        children: [P([Tb(i === 0 ? (dateStr || "—") : "")])],
+      });
+
       schedRows.push(new TableRow({ children: [
-        i === 0
-          ? bodyCell([P([Tb(dateStr || "—")])], 2000, bgColor)
-          : new TableCell({ width: { size: 2000, type: WidthType.DXA }, shading: { fill: bgColor, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([T("")])] }),
-        bodyCell([P([T(horaire)])], 1600, bgColor),
-        bodyCell([P([T(actLabel)])], 2200, bgColor),
-        bodyCell([P([T(ou)])], 1560, bgColor),
-        bodyCell([P([Tb(quoi)])], 2000, bgColor),
+        dateCell,
+        bodyCell([P([T(actLabel)])], 2200, rowBg),
+        bodyCell([P([T(horaire)])], 1600, rowBg),
+        bodyCell([P([T(ou)])], 1560, rowBg),
+        bodyCell([P([Tb(quoi)])], 1800, rowBg),
       ]}));
     });
   }
 
   const scheduleTable = new Table({
     width: { size: 9360, type: WidthType.DXA },
-    columnWidths: [2000, 1600, 2200, 1560, 2000],
+    columnWidths: [2200, 2200, 1600, 1560, 1800],
     rows: schedRows,
   });
 
@@ -186,22 +195,26 @@ export async function generateDocx(form) {
       new TableRow({ children: [new TableCell({
         width: { size: 9360, type: WidthType.DXA },
         shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm,
-        children: [P([Tb("ACCÈS AU SITE (MONTAGE) ET STATIONNEMENT", { color: C.darkGreen })])],
+        children: [P([Tb("ACCÈS AU SITE (MONTAGE) ET STATIONNEMENT", { color: "000000" })])],
       })]}),
       new TableRow({ children: [new TableCell({
         width: { size: 9360, type: WidthType.DXA }, borders: bords, margins: cmLg,
         children: [
           P([Tb("• Accès : "), T("Voir le plan d'accès ci-bas.")]),
-          ...(form.adresse ? [P([
-            Tb("• Itinéraire : "),
-            new ExternalHyperlink({
-              link: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.adresse || "")}`,
-              children: [T("Ouvrir dans Google Maps", { color: C.linkBlue, underline: {} })],
-            }),
-          ])] : []),
           firstDateStr ? P([T(`📆 ${firstDateStr}`)]) : sp(),
           P([T(`📍 ${form.adresse || "—"}`)]),
-          P([Tb("• Stationnement : "), T("En rouge sur la carte ci-bas.")]),
+          ...(form.adresse ? [
+            P([
+              new ExternalHyperlink({
+                link: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.adresse)}`,
+                children: [T(form.adresse, { color: C.linkBlue, underline: {} })],
+              }),
+            ]),
+            P([T("⚠️ SVP valider que l'adresse dans Google Maps est la bonne.", { color: "cc0000", size: 18 })]),
+          ] : []),
+          ...(form.camionElectrique ? [P([Tb("🔌 Camion électrique : "), T("Prévoir le camion électrique pour cet événement.")])] : []),
+          ...(form.boothNumber ? [P([Tb("• Kiosque : "), T(form.boothNumber)])] : []),
+          P([Tb("• Stationnement : "), T(form.stationnement || "Voir info et/ou photo plus bas, le cas échéant.")]),
         ],
       })]}),
     ],
@@ -212,8 +225,8 @@ export async function generateDocx(form) {
     width: { size: 9360, type: WidthType.DXA }, columnWidths: [4680, 4680],
     rows: [
       new TableRow({ children: [
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("CONTACT SUR PLACE", { color: C.darkGreen })])] }),
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("DOCUMENTS DE RÉFÉRENCE", { color: C.darkGreen })])] }),
+        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("CONTACT SUR PLACE", { color: "000000" })])] }),
+        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("DOCUMENTS DE RÉFÉRENCE", { color: "000000" })])] }),
       ]}),
       new TableRow({ children: [
         new TableCell({ width: { size: 4680, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [
@@ -257,12 +270,12 @@ export async function generateDocx(form) {
     width: { size: 9360, type: WidthType.DXA }, columnWidths: [4680, 4680],
     rows: [
       new TableRow({ children: [
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("LOGISTIQUE POUR MONTAGE",        { color: C.darkGreen })])] }),
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("LOGISTIQUE SURVEILLANCE DE NUIT", { color: C.darkGreen })])] }),
+        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("LOGISTIQUE POUR MONTAGE",        { color: "000000" })])] }),
+        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("LOGISTIQUE SURVEILLANCE DE NUIT", { color: "000000" })])] }),
       ]}),
       new TableRow({ children: [
         new TableCell({ width: { size: 4680, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [
-          P([Tb("• Matériel nécessaire :")]),
+          P([Tb("• Matériel nécessaire : "), new ExternalHyperlink({ link: "https://lufasaleseventsteam.github.io/inventaire/", children: [T("→ Ouvrir l'inventaire", { color: C.linkBlue, underline: {} })] })]),
           new Table({
             width: { size: 4200, type: WidthType.DXA }, columnWidths: [2100, 2100],
             rows: [new TableRow({ children: [
@@ -373,7 +386,7 @@ export async function generateDocx(form) {
       properties: {
         page: {
           size: { width: 12240, height: 15840 },
-          margin: { top: 720, right: 720, bottom: 720, left: 720 },
+          margin: { top: 240, right: 240, bottom: 240, left: 240 },
         },
       },
       children: docChildren,
