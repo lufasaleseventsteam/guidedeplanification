@@ -106,10 +106,10 @@ export async function generateDocx(form) {
       shading: { fill: C.lightYellow, type: ShadingType.CLEAR }, borders: bords,
       margins: cm,
       children: [P([
-        ...(form.signupObjectiveTotal ? [Tb("🎯 Objectif : ", { size: 24 }), T(form.signupObjectiveTotal + " inscriptions", { size: 24 })] : []),
-        ...(form.signupObjectiveTotal && form.eventCost ? [T("   |   ", { size: 24 })] : []),
-        ...(form.eventCost ? [Tb("💰 Coût : ", { size: 24 }), T(form.eventCost + " $", { size: 24 })] : []),
-        ...(cpa ? [T("   |   ", { size: 24 }), Tb("CPA cible : ", { size: 24 }), T(cpa + " $", { size: 24 })] : []),
+        ...(form.signupObjectiveTotal ? [Tb("🎯 Objectif : " + form.signupObjectiveTotal + " inscriptions", { size: 24 })] : []),
+        ...(form.signupObjectiveTotal && form.eventCost ? [Tb("   |   ", { size: 24 })] : []),
+        ...(form.eventCost ? [Tb("💰 Coût : " + form.eventCost + " $", { size: 24 })] : []),
+        ...(cpa ? [Tb("   |   CPA cible : " + cpa + " $", { size: 24 })] : []),
       ], { alignment: AlignmentType.CENTER, spacing: { before: 80, after: 80 } })],
     })] })],
   }) : null;
@@ -277,7 +277,7 @@ export async function generateDocx(form) {
       borders: bords, margins: cmLg,
       children: [P([
         Tb("📋 Checklist matériel : ", { color: C.dark }),
-        new ExternalHyperlink({ link: invUrl, children: [T("Ouvrir l'inventaire de matériel", { color: C.linkBlue, underline: {} })] }),
+        new ExternalHyperlink({ link: invUrl, children: [T("✅ Confirmer votre prise de matériel (*obligatoire)", { color: "cc0000", bold: true, underline: {} })] }),
       ])],
     })]})],
   });
@@ -297,7 +297,7 @@ export async function generateDocx(form) {
       ]}),
       new TableRow({ children: [
         new TableCell({ width: { size: 5880, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [
-          P([Tb("• Matériel nécessaire : "), new ExternalHyperlink({ link: "https://lufasaleseventsteam.github.io/inventaire/", children: [T("→ Ouvrir l'inventaire", { color: C.linkBlue, underline: {} })] })]),
+          P([Tb("• Matériel nécessaire : "), new ExternalHyperlink({ link: "https://lufasaleseventsteam.github.io/inventaire/", children: [T("✅ Confirmer votre prise de matériel (*obligatoire)", { color: "cc0000", bold: true, underline: {} })] })]),
           new Table({
             width: { size: 4200, type: WidthType.DXA }, columnWidths: [2100, 2100],
             rows: [new TableRow({ children: [
@@ -386,7 +386,7 @@ export async function generateDocx(form) {
     titleTable,
     ...(signupBanner ? [sp(), signupBanner] : []),
     sp(),
-    bannerTable("HORAIRE (montage, livraisons, animation, démontage)"),
+    bannerTable("HORAIRE — montage, livraisons, animation, démontage"),
     scheduleTable,
     sp(),
     accessTable,
