@@ -32,7 +32,7 @@ const cmLg  = { top: 100, bottom: 100, left: 160, right: 160 };
 const T  = (text, o = {}) => new TextRun({ text: String(text || ""), font: "Garamond", size: 22, color: C.gray, ...o });
 const Tb = (text, o = {}) => T(text, { bold: true, ...o });
 const P  = (runs, o = {}) => new Paragraph({ children: Array.isArray(runs) ? runs : [runs], ...o });
-const sp = ()              => P([T(" ", { size: 14 })], { spacing: { before: 40, after: 40 } });
+const sp = ()              => P([T("")], { spacing: { before: 40, after: 40 } });
 
 const hdrCell = (text, width) => new TableCell({
   width: { size: width, type: WidthType.DXA },
@@ -69,7 +69,7 @@ export async function generateDocx(form) {
   const logoBytes  = Uint8Array.from(atob(logoBase64), c => c.charCodeAt(0));
   const logoPara   = new Paragraph({
     alignment: AlignmentType.CENTER,
-    spacing: { before: 0, after: 160 },
+    spacing: { before: 0, after: 60 },
     children: [new ImageRun({
       data: logoBytes,
       transformation: { width: 80, height: 80 },
@@ -102,7 +102,7 @@ export async function generateDocx(form) {
       width: { size: 11760, type: WidthType.DXA },
       shading: { fill: C.lightYellow, type: ShadingType.CLEAR }, borders: bords,
       margins: cm,
-      children: [P([Tb("🎯 OBJECTIF INSCRIPTIONS : "), T(form.signupObjectiveTotal)], { alignment: AlignmentType.CENTER })],
+      children: [P([Tb("🎯 OBJECTIF INSCRIPTIONS", { size: 22 })], { alignment: AlignmentType.CENTER, spacing: { before: 60, after: 20 } }), P([Tb(form.signupObjectiveTotal, { size: 72, color: "000000" })], { alignment: AlignmentType.CENTER, spacing: { before: 20, after: 60 } })],
     })] })],
   }) : null;
 
@@ -156,18 +156,17 @@ export async function generateDocx(form) {
           act.arrivalTime   ? `Arrivée : ${fmt24(act.arrivalTime)}` : "",
         ].filter(Boolean).join("  |  ");
         quoi = act.transportNote || "";
-        rowBg = "dce8f8";
       } else {
         horaire = act.timeStart && act.timeEnd
           ? `${fmt24(act.timeStart)} – ${fmt24(act.timeEnd)}`
           : fmt24(act.timeStart) || "";
         quoi = (act.activityLabel || "").trim();
-        rowBg = act.type === "animation" ? C.lightGreen : C.white;
       }
+      rowBg = dayBg; // all rows in a day share the same colour
 
       // Date cell: show text on first row only, day background, thick top border between days
       const rowBorders = (i === 0 && !isFirstDay) ? bordsTop : bords;
-      const effectiveRowBg = rowBg === C.white ? dayBg : rowBg; // keep travel/animation colour, else use day bg
+      const effectiveRowBg = dayBg;
       const dateCell = new TableCell({
         width: { size: 2400, type: WidthType.DXA },
         shading: { fill: dayBg, type: ShadingType.CLEAR },
@@ -212,21 +211,21 @@ export async function generateDocx(form) {
       new TableRow({ children: [new TableCell({
         width: { size: 11760, type: WidthType.DXA }, borders: bords, margins: cmLg,
         children: [
-          P([Tb("• Accès : "), T("Voir le plan d'accès ci-bas.")]),
-          firstDateStr ? P([T(`📆 ${firstDateStr}`)]) : sp(),
-          P([T(`📍 ${form.adresse || "—"}`)]),
+          P([Tb("• Accès : "), T("Voir le plan d'accès ci-bas.")], { spacing: { before: 80, after: 80 } }),
+          firstDateStr ? P([T(`📆 ${firstDateStr}`)], { spacing: { before: 80, after: 80 } }) : sp(),
+          P([T(`📍 ${form.adresse || "—"}`)], { spacing: { before: 80, after: 80 } }),
           ...(form.adresse ? [
             P([
               new ExternalHyperlink({
                 link: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.adresse)}`,
                 children: [T(form.adresse, { color: C.linkBlue, underline: {} })],
               }),
-            ]),
-            P([T("⚠️ SVP valider que l'adresse dans Google Maps est la bonne.", { color: "cc0000", size: 18 })]),
+            ], { spacing: { before: 0, after: 60 } }),
+            P([T("⚠️ SVP valider que l'adresse dans Google Maps est la bonne.", { color: "cc0000", size: 18 })], { spacing: { before: 0, after: 80 } }),
           ] : []),
-          ...(form.camionElectrique ? [P([Tb("⚡🚚 Camion électrique : "), T("Prévoir le camion électrique pour cet événement.")])] : []),
-          ...(form.boothNumber ? [P([Tb("• Kiosque : "), T(form.boothNumber)])] : []),
-          P([Tb("• Stationnement : "), T(form.stationnement || "Voir info et/ou photo plus bas, le cas échéant.")]),
+          ...(form.camionElectrique ? [P([Tb("⚡🚚 Camion électrique : "), T("Prévoir le camion électrique pour cet événement.")], { spacing: { before: 80, after: 80 } })] : []),
+          ...(form.boothNumber ? [P([Tb("• Kiosque : "), T(form.boothNumber)], { spacing: { before: 80, after: 80 } })] : []),
+          P([Tb("• Stationnement : "), T(form.stationnement || "Voir info et/ou photo plus bas, le cas échéant.")], { spacing: { before: 80, after: 80 } }),
         ],
       })]}),
     ],
@@ -304,7 +303,6 @@ export async function generateDocx(form) {
 
   // ── Notes internes ─────────────────────────────────────────────────────────
   const notesSec = form.notesInternes ? [
-    sp(),
     bannerTable("NOTES INTERNES"),
     new Table({
       width: { size: 11760, type: WidthType.DXA }, columnWidths: [11760],
@@ -318,7 +316,6 @@ export async function generateDocx(form) {
 
   // ── Map ────────────────────────────────────────────────────────────────────
   const mapChildren = [
-    sp(),
     bannerTable("PLAN D'ACCÈS POUR LE MONTAGE"),
     new Table({
       width: { size: 11760, type: WidthType.DXA }, columnWidths: [11760],
@@ -354,7 +351,6 @@ export async function generateDocx(form) {
   // ── Documents joints ───────────────────────────────────────────────────────
   const attachments = (form.attachments || []).filter(a => a.driveLink);
   const attachSec = attachments.length > 0 ? [
-    sp(),
     bannerTable("DOCUMENTS JOINTS"),
     new Table({
       width: { size: 11760, type: WidthType.DXA }, columnWidths: [11760],
@@ -377,15 +373,11 @@ export async function generateDocx(form) {
   const docChildren = [
     logoPara,
     titleTable,
-    ...(signupBanner ? [sp(), signupBanner] : []),
-    sp(),
+    ...(signupBanner ? [signupBanner] : []),
     bannerTable("HORAIRE (montage, livraisons, animation, démontage)"),
     scheduleTable,
-    sp(),
     accessTable,
-    sp(),
     contactTable,
-    sp(),
     logTable,
     ...attachSec,
     ...notesSec,
