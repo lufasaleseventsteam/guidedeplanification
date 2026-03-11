@@ -3,9 +3,7 @@ import {
   AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
   ExternalHyperlink, ImageRun,
 } from "docx";
-import { saveAs } from "file-saver";
-import { DRIVE_LINKS } from "./constants";
-import { DAY_TYPE_LABELS } from "./constants";
+import { DRIVE_LINKS, DAY_TYPE_LABELS } from "./constants";
 import { fmt24, formatDate } from "./helpers";
 import { LOGO_B64 } from "./logo_lufa.js";
 

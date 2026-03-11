@@ -1,11 +1,11 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { PALETTE } from "../constants";
 import { formatDateShort, getFirstDate } from "../helpers";
 import { Btn, PageWrap } from "../components/UI";
 import { clearSession } from "../googleAuth";
 import { LOGO_B64 } from "../logo_lufa.js";
 
-export default function ListView({ events, onNew, onDetail, onGenerate, generating, loading, onImport, user, onSignOut, driveSyncing, onSync, onDriveFolder, driveFolderLoading }) {
+export default function ListView({ events, onNew, onDetail, onGenerate, generating, loading, user, onSignOut, driveSyncing, onSync, onDriveFolder, driveFolderLoading }) {
   const today      = new Date().toISOString().slice(0, 10);
   const [search, setSearch] = useState("");
 
