@@ -101,7 +101,11 @@ async function getOrCreateMonthFolder() {
   const name   = `${year}-${mm} — ${FR_MONTHS[month]} ${year}`;
 
   let folder = await findFolder(name, PARENT_FOLDER);
-  if (!folder) folder = await createFolder(name, PARENT_FOLDER);
+  if (!folder) {
+    // Another user may have just created it — create then re-check
+    try { await createFolder(name, PARENT_FOLDER); } catch(e) {}
+    folder = await findFolder(name, PARENT_FOLDER);
+  }
   return folder.id;
 }
 
@@ -136,6 +140,19 @@ async function makePublicReadable(fileId) {
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({ role: "reader", type: "anyone" }),
   });
+}
+
+// ── Delete a file from Drive ──────────────────────────────────────────────────
+export async function deleteDriveFile(fileId) {
+  try {
+    const token = await getAccessToken();
+    await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch(e) {
+    console.error("deleteDriveFile failed:", e);
+  }
 }
 
 // ── Main export: save to Drive and return shareable link ────────────────────

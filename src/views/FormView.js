@@ -68,9 +68,25 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
 
   const handleMapUpload = async e => {
     const files = Array.from(e.target.files);
-    const loaded = await Promise.all(files.map(async file => ({
-      id: uid(), data: await readFileAsDataURL(file), name: file.name, width: 100,
-    })));
+    const loaded = await Promise.all(files.map(async file => {
+      // Compress image to max 1200px wide to keep payload manageable
+      const data = await new Promise((resolve) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          const maxW = 1200;
+          const scale = img.width > maxW ? maxW / img.width : 1;
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(url);
+          resolve(canvas.toDataURL("image/jpeg", 0.82));
+        };
+        img.src = url;
+      });
+      return { id: uid(), data, name: file.name, width: 100 };
+    }));
     setForm(f => ({ ...f, mapImages: [...(f.mapImages || []), ...loaded] }));
     e.target.value = "";
   };
@@ -91,7 +107,8 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
     if (!form.eventName.trim()) { setError("Le nom de l'événement est requis."); return; }
     setError(""); setSaving(true);
     try { await onSave(form); }
-    catch (e) { setError("Erreur : " + e.message); setSaving(false); }
+    catch (e) { setError("Erreur : " + e.message); }
+    finally { setSaving(false); }
   };
 
   return (
