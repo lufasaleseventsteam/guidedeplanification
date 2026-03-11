@@ -45,10 +45,10 @@ function ActivityBlock({ act, onChange, onRemove, canRemove }) {
       {/* Non-travel: time range + location + label */}
       {!isTravel && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
-          <Fld label="De" style={{ marginBottom: 0 }}>
+          <Fld label="De (ex: 14:30)" style={{ marginBottom: 0 }}>
             <input autoComplete="off" type="time" value={act.timeStart || ""} onChange={e => set("timeStart")(e.target.value)} style={inp} />
           </Fld>
-          <Fld label="À" style={{ marginBottom: 0 }}>
+          <Fld label="À (ex: 17:00)" style={{ marginBottom: 0 }}>
             <input autoComplete="off" type="time" value={act.timeEnd || ""} onChange={e => set("timeEnd")(e.target.value)} style={inp} />
           </Fld>
           <Fld label="Lieu" style={{ marginBottom: 0 }}>

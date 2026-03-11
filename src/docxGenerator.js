@@ -126,7 +126,11 @@ export async function generateDocx(form) {
       ? (["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"][parseInt(day.dayOfWeek)] || day.dayOfWeek || "—")
       : formatDate(day.date);
 
-    const activities = day.activities || [];
+    const activities = (day.activities || []).filter(act => {
+      const isTravel = act.type === "travel_depart" || act.type === "travel_return";
+      if (isTravel) return act.departureTime || act.arrivalTime || act.transportNote;
+      return act.timeStart || act.timeEnd || act.activityLabel;
+    });
     activities.forEach((act, i) => {
       const isTravel = act.type === "travel_depart" || act.type === "travel_return";
       const actLabel = act.type === "custom"
