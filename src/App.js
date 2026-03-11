@@ -20,10 +20,7 @@ export default function App() {
   const [detailId,   setDetailId]   = useState(null);
   const [generating, setGenerating] = useState(null);
   const [driveResult, setDriveResult] = useState(null);
-  const [duplicateData, setDuplicateData] = useState(null);
-  const [driveFolderLoading, setDriveFolderLoading] = useState(false); // { name, shareLink, fileName, blob, mimeType }
   const [loading,    setLoading]    = useState(true);
-
   const [driveSyncing, setDriveSyncing] = useState(false);
   const [duplicateData, setDuplicateData] = useState(null);
   const [driveFolderLoading, setDriveFolderLoading] = useState(false);
@@ -88,14 +85,6 @@ export default function App() {
     await persist(events.filter(e => e.id !== id));
     setDetailId(null);
     setView("list");
-  };
-
-  const handleDuplicate = (ev) => {
-    const copy = { ...ev, id: null, eventName: `Copie de ${ev.eventName}`, createdAt: Date.now(), updatedAt: Date.now() };
-    setEditingId(null);
-    // Pre-fill form with copied data
-    setDuplicateData(copy);
-    setView("form");
   };
 
   const handleGenerate = async (ev, format = "pdf") => {
