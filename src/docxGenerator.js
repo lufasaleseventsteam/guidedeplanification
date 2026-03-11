@@ -20,8 +20,10 @@ const C = {
   linkBlue:    "1155cc",   // #1155cc hyperlinks
 };
 
-const bd    = { style: BorderStyle.SINGLE, size: 1, color: "bbbbbb" };
-const bords = { top: bd, bottom: bd, left: bd, right: bd };
+const bd      = { style: BorderStyle.SINGLE, size: 1, color: "bbbbbb" };
+const bords   = { top: bd, bottom: bd, left: bd, right: bd };
+const bdThick = { style: BorderStyle.SINGLE, size: 12, color: "555555" };
+const bordsTop = { top: bdThick, bottom: bd, left: bd, right: bd };
 const noBd  = { style: BorderStyle.NONE,   size: 0, color: "FFFFFF" };
 const noBds = { top: noBd, bottom: noBd, left: noBd, right: noBd };
 const cm    = { top: 60,  bottom: 60,  left: 100, right: 100 };
@@ -46,7 +48,7 @@ const bodyCell = (children, width, fill = C.white) => new TableCell({
   children: Array.isArray(children) ? children : [P(Array.isArray(children) ? children : [children])],
 });
 
-const bannerTable = (text, totalWidth = 9360) => new Table({
+const bannerTable = (text, totalWidth = 11760) => new Table({
   width: { size: totalWidth, type: WidthType.DXA }, columnWidths: [totalWidth],
   rows: [new TableRow({ children: [new TableCell({
     width: { size: totalWidth, type: WidthType.DXA },
@@ -77,9 +79,9 @@ export async function generateDocx(form) {
 
   // ── Title ──────────────────────────────────────────────────────────────────
   const titleTable = new Table({
-    width: { size: 9360, type: WidthType.DXA }, columnWidths: [9360],
+    width: { size: 11760, type: WidthType.DXA }, columnWidths: [11760],
     rows: [new TableRow({ children: [new TableCell({
-      width: { size: 9360, type: WidthType.DXA },
+      width: { size: 11760, type: WidthType.DXA },
       shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords,
       margins: { top: 180, bottom: 180, left: 160, right: 160 },
       children: [
@@ -95,9 +97,9 @@ export async function generateDocx(form) {
 
   // ── Signup objective banner (if set) ───────────────────────────────────────
   const signupBanner = form.signupObjectiveTotal ? new Table({
-    width: { size: 9360, type: WidthType.DXA }, columnWidths: [9360],
+    width: { size: 11760, type: WidthType.DXA }, columnWidths: [11760],
     rows: [new TableRow({ children: [new TableCell({
-      width: { size: 9360, type: WidthType.DXA },
+      width: { size: 11760, type: WidthType.DXA },
       shading: { fill: C.lightYellow, type: ShadingType.CLEAR }, borders: bords,
       margins: cm,
       children: [P([Tb("🎯 OBJECTIF INSCRIPTIONS : "), T(form.signupObjectiveTotal)], { alignment: AlignmentType.CENTER })],
@@ -107,11 +109,11 @@ export async function generateDocx(form) {
   // ── Schedule ───────────────────────────────────────────────────────────────
   const schedRows = [
     new TableRow({ children: [
-      hdrCell("Date", 2200),
-      hdrCell("Type", 2200),
-      hdrCell("Horaire", 1600),
-      hdrCell("Où?", 1560),
-      hdrCell("Quoi?", 1800),
+      hdrCell("Date", 2400),
+      hdrCell("Type", 2400),
+      hdrCell("Horaire", 2160),
+      hdrCell("Où?", 2400),
+      hdrCell("Quoi?", 2400),
     ]}),
   ];
 
@@ -132,8 +134,10 @@ export async function generateDocx(form) {
       : formatDate(day.date);
 
     const activities = (day.activities || []).filter(hasContent);
-    // Use a light grey for the date column to visually group the day
-    const dateBg = "efefef";
+    // Alternate day background: even days white, odd days light grey
+    const dayIndex = filledDays.indexOf(day);
+    const dayBg = dayIndex % 2 === 0 ? C.white : "f0f0f0";
+    const isFirstDay = dayIndex === 0;
 
     activities.forEach((act, i) => {
       const isTravel = act.type === "travel_depart" || act.type === "travel_return";
@@ -161,27 +165,35 @@ export async function generateDocx(form) {
         rowBg = act.type === "animation" ? C.lightGreen : C.white;
       }
 
-      // Date cell: only show text on first row, always grey bg to group the day
+      // Date cell: show text on first row only, day background, thick top border between days
+      const rowBorders = (i === 0 && !isFirstDay) ? bordsTop : bords;
+      const effectiveRowBg = rowBg === C.white ? dayBg : rowBg; // keep travel/animation colour, else use day bg
       const dateCell = new TableCell({
-        width: { size: 2200, type: WidthType.DXA },
-        shading: { fill: dateBg, type: ShadingType.CLEAR },
-        borders: bords, margins: cm,
+        width: { size: 2400, type: WidthType.DXA },
+        shading: { fill: dayBg, type: ShadingType.CLEAR },
+        borders: rowBorders, margins: cm,
         children: [P([Tb(i === 0 ? (dateStr || "—") : "")])],
+      });
+      const makeCell = (children, width, bg) => new TableCell({
+        width: { size: width, type: WidthType.DXA },
+        shading: { fill: bg, type: ShadingType.CLEAR },
+        borders: rowBorders, margins: cm, verticalAlign: VerticalAlign.CENTER,
+        children,
       });
 
       schedRows.push(new TableRow({ children: [
         dateCell,
-        bodyCell([P([T(actLabel)])], 2200, rowBg),
-        bodyCell([P([T(horaire)])], 1600, rowBg),
-        bodyCell([P([T(ou)])], 1560, rowBg),
-        bodyCell([P([Tb(quoi)])], 1800, rowBg),
+        makeCell([P([T(actLabel)])], 2400, effectiveRowBg),
+        makeCell([P([T(horaire)])], 2160, effectiveRowBg),
+        makeCell([P([T(ou)])], 2400, effectiveRowBg),
+        makeCell([P([Tb(quoi)])], 2400, effectiveRowBg),
       ]}));
     });
   }
 
   const scheduleTable = new Table({
-    width: { size: 9360, type: WidthType.DXA },
-    columnWidths: [2200, 2200, 1600, 1560, 1800],
+    width: { size: 11760, type: WidthType.DXA },
+    columnWidths: [2400, 2400, 2160, 2400, 2400],
     rows: schedRows,
   });
 
@@ -190,15 +202,15 @@ export async function generateDocx(form) {
   const firstDateStr  = firstEventDay ? formatDate(firstEventDay.date) : "";
 
   const accessTable = new Table({
-    width: { size: 9360, type: WidthType.DXA }, columnWidths: [9360],
+    width: { size: 11760, type: WidthType.DXA }, columnWidths: [11760],
     rows: [
       new TableRow({ children: [new TableCell({
-        width: { size: 9360, type: WidthType.DXA },
+        width: { size: 11760, type: WidthType.DXA },
         shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm,
         children: [P([Tb("ACCÈS AU SITE (MONTAGE) ET STATIONNEMENT", { color: "000000" })])],
       })]}),
       new TableRow({ children: [new TableCell({
-        width: { size: 9360, type: WidthType.DXA }, borders: bords, margins: cmLg,
+        width: { size: 11760, type: WidthType.DXA }, borders: bords, margins: cmLg,
         children: [
           P([Tb("• Accès : "), T("Voir le plan d'accès ci-bas.")]),
           firstDateStr ? P([T(`📆 ${firstDateStr}`)]) : sp(),
@@ -212,7 +224,7 @@ export async function generateDocx(form) {
             ]),
             P([T("⚠️ SVP valider que l'adresse dans Google Maps est la bonne.", { color: "cc0000", size: 18 })]),
           ] : []),
-          ...(form.camionElectrique ? [P([Tb("🔌 Camion électrique : "), T("Prévoir le camion électrique pour cet événement.")])] : []),
+          ...(form.camionElectrique ? [P([Tb("⚡🚚 Camion électrique : "), T("Prévoir le camion électrique pour cet événement.")])] : []),
           ...(form.boothNumber ? [P([Tb("• Kiosque : "), T(form.boothNumber)])] : []),
           P([Tb("• Stationnement : "), T(form.stationnement || "Voir info et/ou photo plus bas, le cas échéant.")]),
         ],
@@ -222,20 +234,20 @@ export async function generateDocx(form) {
 
   // ── Contact + Docs ─────────────────────────────────────────────────────────
   const contactTable = new Table({
-    width: { size: 9360, type: WidthType.DXA }, columnWidths: [4680, 4680],
+    width: { size: 11760, type: WidthType.DXA }, columnWidths: [5880, 5880],
     rows: [
       new TableRow({ children: [
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("CONTACT SUR PLACE", { color: "000000" })])] }),
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("DOCUMENTS DE RÉFÉRENCE", { color: "000000" })])] }),
+        new TableCell({ width: { size: 5880, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("CONTACT SUR PLACE", { color: "000000" })])] }),
+        new TableCell({ width: { size: 5880, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("DOCUMENTS DE RÉFÉRENCE", { color: "000000" })])] }),
       ]}),
       new TableRow({ children: [
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [
+        new TableCell({ width: { size: 5880, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [
           P([Tb("• Contact : "), T(form.contactNom || "—")]),
           form.contactTel ? P([T(`  ${form.contactTel}`)]) : sp(),
           form.wifi    ? P([Tb("• WIFI : "),  T(form.wifi)])    : P([T("")]),
           form.wifiMdp ? P([Tb("• MDP : "),   T(form.wifiMdp)]) : P([T("")]),
         ]}),
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [
+        new TableCell({ width: { size: 5880, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [
           P([T("• "), hyperlink("MAPAQ",      DRIVE_LINKS.mapaq)]),
           P([T("• "), hyperlink("Assurances", DRIVE_LINKS.assurances)]),
           P([T("• "), hyperlink("CFIA",       DRIVE_LINKS.cfia)]),
@@ -248,9 +260,9 @@ export async function generateDocx(form) {
   // ── Inventory link ───────────────────────────────────────────────────────────
   const invUrl = "https://lufasaleseventsteam.github.io/inventaire/";
   const inventorySection = new Table({
-    width: { size: 9360, type: WidthType.DXA }, columnWidths: [9360],
+    width: { size: 11760, type: WidthType.DXA }, columnWidths: [11760],
     rows: [new TableRow({ children: [new TableCell({
-      width: { size: 9360, type: WidthType.DXA },
+      width: { size: 11760, type: WidthType.DXA },
       shading: { fill: C.lightGreen, type: ShadingType.CLEAR },
       borders: bords, margins: cmLg,
       children: [P([
@@ -267,14 +279,14 @@ export async function generateDocx(form) {
   const col2    = matNec.filter((_, i) => i % 2 === 1);
 
   const logTable = new Table({
-    width: { size: 9360, type: WidthType.DXA }, columnWidths: [4680, 4680],
+    width: { size: 11760, type: WidthType.DXA }, columnWidths: [5880, 5880],
     rows: [
       new TableRow({ children: [
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("LOGISTIQUE POUR MONTAGE",        { color: "000000" })])] }),
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("LOGISTIQUE SURVEILLANCE DE NUIT", { color: "000000" })])] }),
+        new TableCell({ width: { size: 5880, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("LOGISTIQUE POUR MONTAGE",        { color: "000000" })])] }),
+        new TableCell({ width: { size: 5880, type: WidthType.DXA }, shading: { fill: C.headerGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([Tb("LOGISTIQUE SURVEILLANCE DE NUIT", { color: "000000" })])] }),
       ]}),
       new TableRow({ children: [
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [
+        new TableCell({ width: { size: 5880, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [
           P([Tb("• Matériel nécessaire : "), new ExternalHyperlink({ link: "https://lufasaleseventsteam.github.io/inventaire/", children: [T("→ Ouvrir l'inventaire", { color: C.linkBlue, underline: {} })] })]),
           new Table({
             width: { size: 4200, type: WidthType.DXA }, columnWidths: [2100, 2100],
@@ -285,7 +297,7 @@ export async function generateDocx(form) {
           }),
           ...(matFou.length ? [P([Tb("• Matériel fourni :")]), ...matFou.map(l => P([T(`  – ${l}`)]))] : []),
         ]}),
-        new TableCell({ width: { size: 4680, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [P([T("")])] }),
+        new TableCell({ width: { size: 5880, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [P([T("")])] }),
       ]}),
     ],
   });
@@ -295,9 +307,9 @@ export async function generateDocx(form) {
     sp(),
     bannerTable("NOTES INTERNES"),
     new Table({
-      width: { size: 9360, type: WidthType.DXA }, columnWidths: [9360],
+      width: { size: 11760, type: WidthType.DXA }, columnWidths: [11760],
       rows: [new TableRow({ children: [new TableCell({
-        width: { size: 9360, type: WidthType.DXA }, borders: bords,
+        width: { size: 11760, type: WidthType.DXA }, borders: bords,
         shading: { fill: C.lightYellow, type: ShadingType.CLEAR }, margins: cmLg,
         children: (form.notesInternes || "").split("\n").map(l => P([T(l || " ")])),
       })] })],
@@ -309,9 +321,9 @@ export async function generateDocx(form) {
     sp(),
     bannerTable("PLAN D'ACCÈS POUR LE MONTAGE"),
     new Table({
-      width: { size: 9360, type: WidthType.DXA }, columnWidths: [9360],
+      width: { size: 11760, type: WidthType.DXA }, columnWidths: [11760],
       rows: [new TableRow({ children: [new TableCell({
-        width: { size: 9360, type: WidthType.DXA }, borders: bords, margins: cmLg,
+        width: { size: 11760, type: WidthType.DXA }, borders: bords, margins: cmLg,
         children: [
           P([Tb("Accès montage : "), T(form.instructions || "")]),
           sp(),
@@ -345,9 +357,9 @@ export async function generateDocx(form) {
     sp(),
     bannerTable("DOCUMENTS JOINTS"),
     new Table({
-      width: { size: 9360, type: WidthType.DXA }, columnWidths: [9360],
+      width: { size: 11760, type: WidthType.DXA }, columnWidths: [11760],
       rows: [new TableRow({ children: [new TableCell({
-        width: { size: 9360, type: WidthType.DXA }, borders: bords, margins: cmLg,
+        width: { size: 11760, type: WidthType.DXA }, borders: bords, margins: cmLg,
         children: attachments.map(att =>
           P([
             T(`${att.type === "application/pdf" ? "📄" : "📝"} `),
