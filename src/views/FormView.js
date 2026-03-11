@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { PALETTE, inp } from "../constants";
-import { blankDay, blankActivity, uid, readFileAsDataURL, defaultForm } from "../helpers";
+import { blankDay, blankActivity, uid, readFileAsDataURL, defaultForm, normalizeTime } from "../helpers";
 import DayEditor from "../components/DayEditor";
 import { Inp, Txt, Fld, Card, SecTitle, Btn, BackBtn, PageWrap } from "../components/UI";
 
@@ -105,8 +105,22 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
 
   const handleSave = async () => {
     if (!form.eventName.trim()) { setError("Le nom de l'événement est requis."); return; }
+    // Normalize all time fields before saving
+    const normalizedForm = {
+      ...form,
+      days: (form.days || []).map(day => ({
+        ...day,
+        activities: (day.activities || []).map(act => ({
+          ...act,
+          timeStart:     normalizeTime(act.timeStart),
+          timeEnd:       normalizeTime(act.timeEnd),
+          departureTime: normalizeTime(act.departureTime),
+          arrivalTime:   normalizeTime(act.arrivalTime),
+        })),
+      })),
+    };
     setError(""); setSaving(true);
-    try { await onSave(form); }
+    try { await onSave(normalizedForm); }
     catch (e) { setError("Erreur : " + e.message); }
     finally { setSaving(false); }
   };

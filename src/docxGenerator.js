@@ -119,7 +119,7 @@ export async function generateDocx(form) {
     const isTravel = a.type === "travel_depart" || a.type === "travel_return";
     return isTravel
       ? (a.departureTime || a.arrivalTime || a.transportNote)
-      : (a.timeStart || a.timeEnd || a.activityLabel);
+      : (a.timeStart || a.timeEnd); // must have at least one time to appear
   };
 
   const filledDays = (form.days || []).filter(day =>

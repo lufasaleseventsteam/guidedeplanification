@@ -31,10 +31,10 @@ function ActivityBlock({ act, onChange, onRemove, canRemove }) {
       {isTravel && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
           <Fld label="Départ" style={{ marginBottom: 0 }}>
-            <input autoComplete="off" type="text" value={act.departureTime || ""} onChange={e => set("departureTime")(e.target.value)} onBlur={e => set("departureTime")(normalizeTime(e.target.value))} placeholder="ex: 10:00" style={inp} />
+            <input autoComplete="off" type="text" value={act.departureTime || ""} onChange={e => set("departureTime")(e.target.value)} onBlur={e => { const v = normalizeTime(e.target.value); if (v !== e.target.value) set("departureTime")(v); }} placeholder="ex: 10:00" style={inp} />
           </Fld>
           <Fld label="Arrivée" style={{ marginBottom: 0 }}>
-            <input autoComplete="off" type="text" value={act.arrivalTime || ""} onChange={e => set("arrivalTime")(e.target.value)} onBlur={e => set("arrivalTime")(normalizeTime(e.target.value))} placeholder="ex: 12:00" style={inp} />
+            <input autoComplete="off" type="text" value={act.arrivalTime || ""} onChange={e => set("arrivalTime")(e.target.value)} onBlur={e => { const v = normalizeTime(e.target.value); if (v !== e.target.value) set("arrivalTime")(v); }} placeholder="ex: 12:00" style={inp} />
           </Fld>
           <Fld label="Note transport" style={{ marginBottom: 0 }}>
             <Inp value={act.transportNote || ""} onChange={set("transportNote")} placeholder="ex: Vol MTL→QC" />
@@ -46,10 +46,10 @@ function ActivityBlock({ act, onChange, onRemove, canRemove }) {
       {!isTravel && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
           <Fld label="De (ex: 14:30)" style={{ marginBottom: 0 }}>
-            <input autoComplete="off" type="text" value={act.timeStart || ""} onChange={e => set("timeStart")(e.target.value)} onBlur={e => set("timeStart")(normalizeTime(e.target.value))} placeholder="ex: 14:30" style={inp} />
+            <input autoComplete="off" type="text" value={act.timeStart || ""} onChange={e => set("timeStart")(e.target.value)} onBlur={e => { const v = normalizeTime(e.target.value); if (v !== e.target.value) set("timeStart")(v); }} placeholder="ex: 14:30" style={inp} />
           </Fld>
           <Fld label="À (ex: 17:00)" style={{ marginBottom: 0 }}>
-            <input autoComplete="off" type="text" value={act.timeEnd || ""} onChange={e => set("timeEnd")(e.target.value)} onBlur={e => set("timeEnd")(normalizeTime(e.target.value))} placeholder="ex: 17:00" style={inp} />
+            <input autoComplete="off" type="text" value={act.timeEnd || ""} onChange={e => set("timeEnd")(e.target.value)} onBlur={e => { const v = normalizeTime(e.target.value); if (v !== e.target.value) set("timeEnd")(v); }} placeholder="ex: 17:00" style={inp} />
           </Fld>
           <Fld label="Lieu" style={{ marginBottom: 0 }}>
             <Inp value={act.location || ""} onChange={set("location")} placeholder="Événement" />
