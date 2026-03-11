@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { uid } from "./helpers";
-import { loadEvents, saveEvents } from "./storage"; // kept as fallback
+import { loadEvents, saveEvents } from "./storage";
 import { saveToDrive, loadEventsFromDrive, saveEventsToDrive, getMonthFolderUrl } from "./googleDrive";
 import { generateDocx } from "./docxGenerator";
-import { generatePdf }  from "./pdfGenerator";
-
-import { saveAs }       from "file-saver";
+import { saveAs } from "file-saver";
 import ListView   from "./views/ListView";
 import FormView   from "./views/FormView";
 import DetailView from "./views/DetailView";
@@ -13,157 +11,178 @@ import GoogleLogin from "./components/GoogleLogin";
 import { getSavedSession, clearSession } from "./googleAuth";
 
 export default function App() {
-  const [user, setUser] = useState(() => getSavedSession());
-  const [view,       setView]       = useState("list");
-  const [events,     setEvents]     = useState([]);
-  const [editingId,  setEditingId]  = useState(null);
-  const [detailId,   setDetailId]   = useState(null);
-  const [generating, setGenerating] = useState(null);
-  const [driveResult, setDriveResult] = useState(null);
-  const [loading,    setLoading]    = useState(true);
-  const [driveSyncing, setDriveSyncing] = useState(false);
-  const [duplicateData, setDuplicateData] = useState(null);
+  const [user,               setUser]               = useState(() => getSavedSession());
+  const [view,               setView]               = useState("list");
+  const [events,             setEvents]             = useState([]);
+  const [editingId,          setEditingId]          = useState(null);
+  const [detailId,           setDetailId]           = useState(null);
+  const [generating,         setGenerating]         = useState(null);
+  const [driveResult,        setDriveResult]        = useState(null);
+  const [loading,            setLoading]            = useState(true);
+  const [driveSyncing,       setDriveSyncing]       = useState(false);
+  const [duplicateData,      setDuplicateData]      = useState(null);
   const [driveFolderLoading, setDriveFolderLoading] = useState(false);
+  const [linkCopied,         setLinkCopied]         = useState(false);
 
+  // Load from localStorage on login (instant, no OAuth)
   useEffect(() => {
     if (!user) { setLoading(false); return; }
     setEvents(loadEvents());
     setLoading(false);
   }, [user]);
 
+  // ── Persist: save to localStorage + Drive ─────────────────────────────────
+  const persist = async (updated) => {
+    setEvents(updated);
+    saveEvents(updated);
+    try { await saveEventsToDrive(updated); } catch(e) { console.error("saveEventsToDrive:", e); }
+  };
+
+  // ── Sync from Drive ────────────────────────────────────────────────────────
   const handleDriveSync = async () => {
     setDriveSyncing(true);
     try {
       const evs = await loadEventsFromDrive();
-      if (evs.length > 0) {
-        setEvents(evs);
-        saveEvents(evs);
-      }
-    } catch(e) {
-      console.error("Sync error:", e);
-    }
+      // Always trust Drive as source of truth — overwrites local
+      setEvents(evs);
+      saveEvents(evs);
+    } catch(e) { console.error("Sync error:", e); }
     setDriveSyncing(false);
   };
 
-  const persist = async updated => {
-    setEvents(updated);
-    saveEvents(updated); // keep localStorage as backup
-    try {
-      await saveEventsToDrive(updated);
-    } catch(e) {
-      console.error("saveEventsToDrive error:", e);
-    }
-  };
+  // ── Save form ──────────────────────────────────────────────────────────────
+  const handleSave = async (form) => {
+    const savedId    = editingId || `evt-${uid()}`;
+    const savedEvent = {
+      ...form,
+      id:        savedId,
+      updatedAt: Date.now(),
+      ...(!editingId ? { createdAt: Date.now() } : {}),
+    };
 
-  const handleSave = async form => {
-    const savedId = editingId || `evt-${uid()}`;
-    const savedEvent = { ...form, id: savedId, updatedAt: Date.now(), ...(!editingId ? { createdAt: Date.now() } : {}) };
-    let updated;
-    if (editingId) {
-      updated = events.map(e => e.id === editingId ? savedEvent : e);
-    } else {
-      updated = [savedEvent, ...events];
-    }
+    // 1. Persist event data immediately
+    const updated = editingId
+      ? events.map(e => e.id === editingId ? savedEvent : e)
+      : [savedEvent, ...events];
     await persist(updated);
-    setEditingId(null);
-    const targetView = detailId ? "detail" : "list";
-    setView(targetView);
 
-    // Auto-generate docx and upload to Drive (non-blocking)
-    generateDocx(savedEvent).then(result =>
-      saveToDrive(result.blob, result.fileName, result.mimeType).then(drive => {
-        const withLink = updated.map(e => e.id === savedId
-          ? { ...e, driveLink: drive.shareLink }
-          : e
-        );
-        persist(withLink);
-        setDriveResult({ ...drive, blob: result.blob, fileName: result.fileName, mimeType: result.mimeType });
-      })
-    ).catch(e => console.error("Auto-save to Drive failed:", e));
+    // Navigate back
+    setEditingId(null);
+    setDuplicateData(null);
+    setView(detailId ? "detail" : "list");
+
+    // 2. Upload attachments + generate docx in background
+    try {
+      // Upload new attachments (those still carrying a File object)
+      const attachments = await Promise.all(
+        (savedEvent.attachments || []).map(async att => {
+          if (!att.file) return att;
+          try {
+            const blob  = att.file instanceof Blob ? att.file : new Blob([att.file], { type: att.type });
+            const drive = await saveToDrive(blob, att.name, att.type);
+            return { ...att, file: undefined, driveLink: drive.shareLink, fileId: drive.fileId };
+          } catch(e) {
+            console.error("Attachment upload failed:", att.name, e);
+            return { ...att, file: undefined };
+          }
+        })
+      );
+
+      // Generate docx with uploaded attachment links
+      const eventWithAtts = { ...savedEvent, attachments };
+      const result = await generateDocx(eventWithAtts);
+      const drive  = await saveToDrive(result.blob, result.fileName, result.mimeType);
+
+      // Persist again with driveLink + cleaned attachments
+      const withLink = updated.map(e =>
+        e.id === savedId ? { ...e, attachments, driveLink: drive.shareLink } : e
+      );
+      await persist(withLink);
+
+      // Show popup
+      setDriveResult({ ...drive, blob: result.blob, fileName: result.fileName, mimeType: result.mimeType });
+
+    } catch(e) {
+      console.error("Background Drive save failed:", e);
+    }
   };
 
-  const handleDelete = async id => {
+  // ── Delete ─────────────────────────────────────────────────────────────────
+  const handleDelete = async (id) => {
     await persist(events.filter(e => e.id !== id));
     setDetailId(null);
     setView("list");
   };
 
-  const handleGenerate = async (ev, format = "pdf") => {
+  // ── Regenerate doc manually ────────────────────────────────────────────────
+  const handleGenerate = async (ev, format = "docx") => {
     setGenerating(ev.id);
     try {
-      const result = format === "docx" ? await generateDocx(ev) : await generatePdf(ev);
-      // Upload to Google Drive
-      const drive = await saveToDrive(result.blob, result.fileName, result.mimeType);
+      const result = await generateDocx(ev);
+      const drive  = await saveToDrive(result.blob, result.fileName, result.mimeType);
+      // Update driveLink on event
+      const updated = events.map(e => e.id === ev.id ? { ...e, driveLink: drive.shareLink } : e);
+      await persist(updated);
       setDriveResult({ ...drive, blob: result.blob, fileName: result.fileName, mimeType: result.mimeType });
     } catch(e) {
-      // If Drive fails, fall back to local download
-      console.error("Drive error:", e);
-      alert("Erreur Google Drive : " + e.message + "\n\nLe fichier sera téléchargé localement.");
+      console.error("Generate error:", e);
       try {
-        const result = format === "docx" ? await generateDocx(ev) : await generatePdf(ev);
+        const result = await generateDocx(ev);
         saveAs(result.blob, result.fileName);
       } catch(e2) { alert("Erreur : " + e2.message); }
     }
     setGenerating(null);
   };
 
+  // ── Open Drive month folder ────────────────────────────────────────────────
   const handleOpenDriveFolder = async () => {
     setDriveFolderLoading(true);
     try {
       const url = await getMonthFolderUrl();
       window.open(url, "_blank");
-    } catch(e) {
-      console.error("Drive folder error:", e);
-    }
+    } catch(e) { console.error("Drive folder error:", e); }
     setDriveFolderLoading(false);
   };
 
-  const handleDuplicate = ev => {
-    // Pre-fill form with copied data, clear dates, prefix name
-    const copy = {
+  // ── Duplicate ──────────────────────────────────────────────────────────────
+  const handleDuplicate = (ev) => {
+    setDuplicateData({
       ...ev,
-      id: null,
-      eventName: `Copie de ${ev.eventName || ""}`,
-      days: (ev.days || []).map(d => ({ ...d, date: "" })),
-      createdAt: undefined,
-      updatedAt: undefined,
-    };
+      id:          null,
+      eventName:   `Copie de ${ev.eventName || ""}`,
+      days:        (ev.days || []).map(d => ({ ...d, date: "" })),
+      driveLink:   undefined,
+      attachments: (ev.attachments || []).map(a => ({ ...a, driveLink: undefined, fileId: undefined })),
+      createdAt:   undefined,
+      updatedAt:   undefined,
+    });
     setEditingId(null);
-    setDuplicateData(copy);
     setView("form");
   };
 
-  const handleImport = imported => {
-    setEvents(imported);
-    setView("list");
-  };
-
-  const [linkCopied, setLinkCopied] = useState(false);
+  // ── Copy link helper ───────────────────────────────────────────────────────
   const copyLink = (link) => {
     navigator.clipboard.writeText(link);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
-  // ── Drive result modal ────────────────────────────────────────────────────
+  // ── Drive result modal ─────────────────────────────────────────────────────
   const DriveModal = () => driveResult ? (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}>
       <div style={{ background: "#1a2b1c", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 16, padding: 28, maxWidth: 400, width: "90%", textAlign: "center" }}>
         <div style={{ fontSize: 36, marginBottom: 10 }}>✅</div>
         <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4, color: "#e8f0e9" }}>Guide sauvegardé sur Drive!</div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 20 }}>{driveResult.name}</div>
-
-        {/* Link copy row */}
         <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 14px", marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ flex: 1, color: "#7dc494", fontSize: 11, fontFamily: "inherit", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "left" }}>
+          <span style={{ flex: 1, color: "#7dc494", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "left" }}>
             {driveResult.shareLink}
           </span>
           <button onClick={() => copyLink(driveResult.shareLink)}
-            style={{ background: linkCopied ? "rgba(74,180,89,0.4)" : "rgba(74,124,89,0.3)", border: "none", borderRadius: 7, color: "#7dc494", padding: "7px 14px", cursor: "pointer", fontSize: 12, fontFamily: "inherit", whiteSpace: "nowrap", fontWeight: 700, transition: "background 0.2s" }}>
+            style={{ background: linkCopied ? "rgba(74,180,89,0.4)" : "rgba(74,124,89,0.3)", border: "none", borderRadius: 7, color: "#7dc494", padding: "7px 14px", cursor: "pointer", fontSize: 12, fontFamily: "inherit", whiteSpace: "nowrap", fontWeight: 700 }}>
             {linkCopied ? "✓ Copié!" : "📋 Copier le lien"}
           </button>
         </div>
-
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
           <a href={driveResult.shareLink} target="_blank" rel="noopener noreferrer"
             style={{ padding: "10px 20px", background: "linear-gradient(135deg, #6aaa80, #4a7c59)", borderRadius: 9, color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 13 }}>
@@ -182,22 +201,26 @@ export default function App() {
     </div>
   ) : null;
 
-  // ── PIN gate ───────────────────────────────────────────────────────────────
+  // ── Auth gate ──────────────────────────────────────────────────────────────
   if (!user) return <GoogleLogin onLogin={session => setUser(session)} />;
 
-  // ── Views ──────────────────────────────────────────────────────────────────
+  // ── Form view ──────────────────────────────────────────────────────────────
   if (view === "form") {
+    const initial = editingId
+      ? events.find(e => e.id === editingId)
+      : duplicateData || null;
     return (
       <FormView
         key={editingId || "new"}
-        initial={editingId ? (events.find(e => e.id === editingId) || duplicateData) : duplicateData}
+        initial={initial}
         isEdit={!!editingId}
-        onSave={(form) => { setDuplicateData(null); handleSave(form); }}
+        onSave={handleSave}
         onCancel={() => { setEditingId(null); setDuplicateData(null); setView(detailId ? "detail" : "list"); }}
       />
     );
   }
 
+  // ── Detail view ────────────────────────────────────────────────────────────
   if (view === "detail" && detailId) {
     const ev = events.find(e => e.id === detailId);
     if (!ev) { setView("list"); return null; }
@@ -217,19 +240,19 @@ export default function App() {
     );
   }
 
+  // ── List view ──────────────────────────────────────────────────────────────
   return (
     <>
       <DriveModal />
       <ListView
         events={events}
         loading={loading}
-        onNew={() => { setEditingId(null); setView("form"); }}
+        onNew={() => { setEditingId(null); setDuplicateData(null); setView("form"); }}
         onDetail={ev => { setDetailId(ev.id); setView("detail"); }}
         onGenerate={handleGenerate}
         generating={generating}
-        onImport={handleImport}
         user={user}
-        onSignOut={() => setUser(null)}
+        onSignOut={() => { clearSession(); setUser(null); }}
         driveSyncing={driveSyncing}
         onSync={handleDriveSync}
         onDriveFolder={handleOpenDriveFolder}

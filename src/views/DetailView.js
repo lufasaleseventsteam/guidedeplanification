@@ -6,6 +6,8 @@ import { Card, SecTitle, Btn, BackBtn, PageWrap, Lbl } from "../components/UI";
 export default function DetailView({ ev, onEdit, onDelete, onBack, onGenerate, generating, onDuplicate }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  if (!ev || typeof ev !== 'object') { onBack(); return null; }
+
   const dates     = (ev.days || []).filter(d => d.date).map(d => d.date).sort();
   const dateRange = dates.length > 1
     ? `${formatDateShort(dates[0])} – ${formatDateShort(dates[dates.length - 1])}`
