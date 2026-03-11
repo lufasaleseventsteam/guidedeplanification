@@ -23,6 +23,7 @@ export default function App() {
   const [duplicateData,      setDuplicateData]      = useState(null);
   const [driveFolderLoading, setDriveFolderLoading] = useState(false);
   const [linkCopied,         setLinkCopied]         = useState(false);
+  const [savingDoc,          setSavingDoc]          = useState(false);
 
   // Load from localStorage on login (instant, no OAuth)
   useEffect(() => {
@@ -67,6 +68,7 @@ export default function App() {
     await persist(updated);
 
     // 2. Upload attachments + generate docx — stay on form until done
+    setSavingDoc(true);
     try {
       const attachments = await Promise.all(
         (savedEvent.attachments || []).map(async att => {
@@ -91,10 +93,12 @@ export default function App() {
       );
       await persist(withLink);
 
+      setSavingDoc(false);
       // Show popup BEFORE navigating away
       setDriveResult({ ...drive, blob: result.blob, fileName: result.fileName, mimeType: result.mimeType });
 
     } catch(e) {
+      setSavingDoc(false);
       console.error("Background Drive save failed:", e);
     }
 
@@ -164,6 +168,31 @@ export default function App() {
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
+  // ── Saving modal (loading state) ──────────────────────────────────────────
+  const SavingModal = () => savingDoc ? (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}>
+      <div style={{ background: "#1a2b1c", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 16, padding: 32, maxWidth: 340, width: "90%", textAlign: "center" }}>
+        <div style={{ fontSize: 32, marginBottom: 14 }}>📝</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: "#e8f0e9", marginBottom: 6 }}>Création du guide...</div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 22 }}>Génération et sauvegarde sur Google Drive</div>
+        <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 99, height: 6, overflow: "hidden" }}>
+          <div style={{
+            height: "100%", borderRadius: 99,
+            background: "linear-gradient(90deg, #4a7c59, #7dc494)",
+            animation: "progress 2s ease-in-out infinite",
+          }} />
+        </div>
+        <style>{`
+          @keyframes progress {
+            0%   { width: 5%;  margin-left: 0; }
+            50%  { width: 60%; margin-left: 20%; }
+            100% { width: 5%;  margin-left: 95%; }
+          }
+        `}</style>
+      </div>
+    </div>
+  ) : null;
+
   // ── Drive result modal ─────────────────────────────────────────────────────
   const DriveModal = () => driveResult ? (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}>
@@ -208,6 +237,7 @@ export default function App() {
       : duplicateData || null;
     return (
       <>
+        <SavingModal />
         <DriveModal />
         <FormView
           key={editingId || "new"}
@@ -226,6 +256,7 @@ export default function App() {
     if (!ev) { setView("list"); return null; }
     return (
       <>
+        <SavingModal />
         <DriveModal />
         <DetailView
           ev={ev}
@@ -243,6 +274,7 @@ export default function App() {
   // ── List view ──────────────────────────────────────────────────────────────
   return (
     <>
+      <SavingModal />
       <DriveModal />
       <ListView
         events={events}
