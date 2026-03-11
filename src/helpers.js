@@ -1,7 +1,21 @@
 export function fmt24(t) {
-  if (!t) return "";
-  const [h, m] = t.split(":");
+  if (!t || !String(t).trim()) return "";
+  const s = String(t).trim().replace(/[hH]/, ":");
+  const parts = s.split(":");
+  const h = parts[0].padStart(2, "0");
+  const m = (parts[1] || "00").replace(/\D/g, "").padEnd(2, "0").slice(0, 2);
   return `${h}h${m}`;
+}
+
+// Normalize time input to HH:MM for storage
+export function normalizeTime(t) {
+  if (!t || !String(t).trim()) return "";
+  const s = String(t).trim().replace(/[hH]/, ":");
+  const parts = s.split(":");
+  const h = parts[0].replace(/\D/g, "").padStart(2, "0");
+  const m = (parts[1] || "00").replace(/\D/g, "").padEnd(2, "0").slice(0, 2);
+  if (!h || isNaN(parseInt(h))) return "";
+  return `${h}:${m}`;
 }
 
 export function formatDate(d) {

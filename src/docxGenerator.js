@@ -115,10 +115,15 @@ export async function generateDocx(form) {
     ]}),
   ];
 
+  const hasContent = a => {
+    const isTravel = a.type === "travel_depart" || a.type === "travel_return";
+    return isTravel
+      ? (a.departureTime || a.arrivalTime || a.transportNote)
+      : (a.timeStart || a.timeEnd || a.activityLabel);
+  };
+
   const filledDays = (form.days || []).filter(day =>
-    day.date || day.dayOfWeek || (day.activities || []).some(a =>
-      a.timeStart || a.activityLabel || a.departureTime
-    )
+    (day.date || day.dayOfWeek) && (day.activities || []).some(hasContent)
   );
 
   for (const day of filledDays) {
@@ -126,11 +131,7 @@ export async function generateDocx(form) {
       ? (["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"][parseInt(day.dayOfWeek)] || day.dayOfWeek || "—")
       : formatDate(day.date);
 
-    const activities = (day.activities || []).filter(act => {
-      const isTravel = act.type === "travel_depart" || act.type === "travel_return";
-      if (isTravel) return act.departureTime || act.arrivalTime || act.transportNote;
-      return act.timeStart || act.timeEnd || act.activityLabel;
-    });
+    const activities = (day.activities || []).filter(hasContent);
     activities.forEach((act, i) => {
       const isTravel = act.type === "travel_depart" || act.type === "travel_return";
       const actLabel = act.type === "custom"
