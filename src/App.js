@@ -66,14 +66,8 @@ export default function App() {
       : [savedEvent, ...events];
     await persist(updated);
 
-    // Navigate back
-    setEditingId(null);
-    setDuplicateData(null);
-    setView(detailId ? "detail" : "list");
-
-    // 2. Upload attachments + generate docx in background
+    // 2. Upload attachments + generate docx — stay on form until done
     try {
-      // Upload new attachments (those still carrying a File object)
       const attachments = await Promise.all(
         (savedEvent.attachments || []).map(async att => {
           if (!att.file) return att;
@@ -88,23 +82,26 @@ export default function App() {
         })
       );
 
-      // Generate docx with uploaded attachment links
       const eventWithAtts = { ...savedEvent, attachments };
       const result = await generateDocx(eventWithAtts);
       const drive  = await saveToDrive(result.blob, result.fileName, result.mimeType);
 
-      // Persist again with driveLink + cleaned attachments
       const withLink = updated.map(e =>
         e.id === savedId ? { ...e, attachments, driveLink: drive.shareLink } : e
       );
       await persist(withLink);
 
-      // Show popup
+      // Show popup BEFORE navigating away
       setDriveResult({ ...drive, blob: result.blob, fileName: result.fileName, mimeType: result.mimeType });
 
     } catch(e) {
       console.error("Background Drive save failed:", e);
     }
+
+    // Navigate back AFTER everything is done
+    setEditingId(null);
+    setDuplicateData(null);
+    setView(detailId ? "detail" : "list");
   };
 
   // ── Delete ─────────────────────────────────────────────────────────────────
@@ -193,7 +190,7 @@ export default function App() {
             ⬇️ Télécharger
           </button>
         </div>
-        <button onClick={() => setDriveResult(null)}
+        <button onClick={() => { setDriveResult(null); setEditingId(null); setDuplicateData(null); setView(detailId ? "detail" : "list"); }}
           style={{ marginTop: 16, background: "none", border: "none", color: "rgba(255,255,255,0.25)", cursor: "pointer", fontFamily: "inherit", fontSize: 13 }}>
           Fermer
         </button>
@@ -210,13 +207,16 @@ export default function App() {
       ? events.find(e => e.id === editingId)
       : duplicateData || null;
     return (
-      <FormView
-        key={editingId || "new"}
-        initial={initial}
-        isEdit={!!editingId}
-        onSave={handleSave}
-        onCancel={() => { setEditingId(null); setDuplicateData(null); setView(detailId ? "detail" : "list"); }}
-      />
+      <>
+        <DriveModal />
+        <FormView
+          key={editingId || "new"}
+          initial={initial}
+          isEdit={!!editingId}
+          onSave={handleSave}
+          onCancel={() => { setEditingId(null); setDuplicateData(null); setView(detailId ? "detail" : "list"); }}
+        />
+      </>
     );
   }
 

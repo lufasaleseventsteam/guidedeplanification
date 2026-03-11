@@ -64,6 +64,19 @@ const hyperlink = (text, url) => new ExternalHyperlink({
 });
 
 export async function generateDocx(form) {
+  // ── Logo ───────────────────────────────────────────────────────────────────
+  const logoBase64 = LOGO_B64.replace(/^data:image\/[a-z]+;base64,/, "");
+  const logoBytes  = Uint8Array.from(atob(logoBase64), c => c.charCodeAt(0));
+  const logoPara   = new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 0, after: 160 },
+    children: [new ImageRun({
+      data: logoBytes,
+      transformation: { width: 80, height: 80 },
+      type: "png",
+    })],
+  });
+
   // ── Title ──────────────────────────────────────────────────────────────────
   const titleTable = new Table({
     width: { size: 9360, type: WidthType.DXA }, columnWidths: [9360],
@@ -341,6 +354,7 @@ export async function generateDocx(form) {
 
   // ── Assemble ───────────────────────────────────────────────────────────────
   const docChildren = [
+    logoPara,
     titleTable,
     ...(signupBanner ? [sp(), signupBanner] : []),
     sp(),

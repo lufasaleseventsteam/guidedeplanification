@@ -109,11 +109,15 @@ async function getOrCreateMonthFolder() {
   return folder.id;
 }
 
-async function uploadFile(blob, fileName, mimeType, folderId) {
+async function uploadFile(blob, fileName, mimeType, folderId, convertToGoogleDoc = false) {
   const token = await getAccessToken();
 
-  // Create multipart upload
-  const metadata = { name: fileName, parents: [folderId] };
+  const docName = convertToGoogleDoc ? fileName.replace(/\.docx$/i, "") : fileName;
+  const metadata = {
+    name: docName,
+    parents: [folderId],
+    ...(convertToGoogleDoc ? { mimeType: "application/vnd.google-apps.document" } : {}),
+  };
   const form = new FormData();
   form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
   form.append("file", blob, fileName);
@@ -126,7 +130,7 @@ async function uploadFile(blob, fileName, mimeType, folderId) {
     const err = await resp.json();
     throw new Error(err.error?.message || "Upload failed");
   }
-  return await resp.json(); // { id, name, webViewLink }
+  return await resp.json();
 }
 
 async function makePublicReadable(fileId) {
@@ -141,7 +145,8 @@ async function makePublicReadable(fileId) {
 // ── Main export: save to Drive and return shareable link ────────────────────
 export async function saveToDrive(blob, fileName, mimeType) {
   const folderId = await getOrCreateMonthFolder();
-  const file     = await uploadFile(blob, fileName, mimeType, folderId);
+  const isDocx = mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  const file   = await uploadFile(blob, fileName, mimeType, folderId, isDocx);
   await makePublicReadable(file.id);
   return {
     fileId:   file.id,
