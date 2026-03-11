@@ -5,7 +5,7 @@ import { Btn, PageWrap } from "../components/UI";
 import { clearSession } from "../googleAuth";
 import { LOGO_B64 } from "../logo_lufa.js";
 
-export default function ListView({ events, onNew, onDetail, onGenerate, generating, loading, user, onSignOut, driveSyncing, onSync, onDriveFolder, driveFolderLoading }) {
+export default function ListView({ events, onNew, onDetail, onDelete, onGenerate, generating, loading, user, onSignOut, driveSyncing, onSync, onDriveFolder, driveFolderLoading }) {
   const today      = new Date().toISOString().slice(0, 10);
   const [search, setSearch] = useState("");
 
@@ -24,6 +24,8 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
   const sorted   = [...filtered].sort((a, b) => (getFirstDate(a) || "9999").localeCompare(getFirstDate(b) || "9999"));
   const upcoming = sorted.filter(e => !getFirstDate(e) || getFirstDate(e) >= today);
   const past     = sorted.filter(e =>  getFirstDate(e) && getFirstDate(e) <  today).reverse();
+
+  const [confirmId, setConfirmId] = useState(null);
 
   const EventCard = ({ ev }) => {
     const dates = (ev.days || []).filter(d => d.date).map(d => d.date).sort();
@@ -49,10 +51,27 @@ export default function ListView({ events, onNew, onDetail, onGenerate, generati
             {hasObjective && <span style={{ color: "#ffe082", marginLeft: 6 }}>🎯</span>}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 7, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: "flex", gap: 7, flexShrink: 0, alignItems: "center" }} onClick={e => e.stopPropagation()}>
           <Btn onClick={() => onGenerate(ev, "docx")} disabled={generating === ev.id} small>
             {generating === ev.id ? "⏳" : "⬇️"}
           </Btn>
+          {confirmId === ev.id ? (
+            <>
+              <button onClick={() => { onDelete(ev.id); setConfirmId(null); }}
+                style={{ background: "rgba(239,83,80,0.25)", border: "1px solid rgba(239,83,80,0.5)", borderRadius: 7, color: "#ef9a9a", padding: "5px 10px", cursor: "pointer", fontSize: 12, fontFamily: "inherit", fontWeight: 700, whiteSpace: "nowrap" }}>
+                Confirmer
+              </button>
+              <button onClick={() => setConfirmId(null)}
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 7, color: "rgba(255,255,255,0.5)", padding: "5px 10px", cursor: "pointer", fontSize: 12, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                Annuler
+              </button>
+            </>
+          ) : (
+            <button onClick={() => setConfirmId(ev.id)}
+              style={{ background: "rgba(239,83,80,0.1)", border: "1px solid rgba(239,83,80,0.25)", borderRadius: 7, color: "#ef9a9a", padding: "5px 9px", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>
+              🗑️
+            </button>
+          )}
         </div>
       </div>
     );

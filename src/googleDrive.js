@@ -42,10 +42,6 @@ function isTokenValid() {
   return _accessToken && Date.now() < _tokenExpiry - 60000;
 }
 
-export function setAccessToken(token, expiresIn = 3600) {
-  _accessToken = token;
-  _tokenExpiry = Date.now() + expiresIn * 1000;
-}
 
 async function getAccessToken() {
   if (isTokenValid()) return _accessToken;
@@ -149,21 +145,13 @@ export async function saveToDrive(blob, fileName, mimeType) {
   const file   = await uploadFile(blob, fileName, mimeType, folderId, isDocx);
   await makePublicReadable(file.id);
   return {
-    fileId:   file.id,
-    name:     file.name,
-    viewLink: file.webViewLink,
-    // Direct share link
+    fileId:    file.id,
+    name:      file.name,
+    viewLink:  file.webViewLink,
     shareLink: `https://drive.google.com/file/d/${file.id}/view?usp=sharing`,
   };
 }
 
-export function signOut() {
-  if (_tokenClient && _accessToken) {
-    window.google.accounts.oauth2.revoke(_accessToken);
-  }
-  _accessToken = null;
-  _tokenExpiry = 0;
-}
 
 // ── Shared events database ───────────────────────────────────────────────────
 const DB_FILE_NAME = "events-db.json";

@@ -5,7 +5,7 @@ import {
 } from "docx";
 import { DRIVE_LINKS, DAY_TYPE_LABELS } from "./constants";
 import { fmt24, formatDate } from "./helpers";
-import { LOGO_B64 } from "./logo_lufa.js";
+import { LOGO_B64_DOC } from "./logo_lufa.js";
 
 // Colors extracted from the reference Lufa doc
 const C = {
@@ -63,7 +63,7 @@ const hyperlink = (text, url) => new ExternalHyperlink({
 
 export async function generateDocx(form) {
   // ── Logo ───────────────────────────────────────────────────────────────────
-  const logoBase64 = LOGO_B64.replace(/^data:image\/[a-z]+;base64,/, "");
+  const logoBase64 = LOGO_B64_DOC.replace(/^data:image\/[a-z]+;base64,/, "");
   const logoBytes  = Uint8Array.from(atob(logoBase64), c => c.charCodeAt(0));
   const logoPara   = new Paragraph({
     alignment: AlignmentType.CENTER,
@@ -107,69 +107,62 @@ export async function generateDocx(form) {
   // ── Schedule ───────────────────────────────────────────────────────────────
   const schedRows = [
     new TableRow({ children: [
-      hdrCell("Quand?", 2000),
-      hdrCell("Quand?", 1600),
-      hdrCell("Horaire", 2200),
+      hdrCell("Date", 2000),
+      hdrCell("Horaire", 1600),
+      hdrCell("Type", 2200),
       hdrCell("Où?", 1560),
       hdrCell("Quoi?", 2000),
     ]}),
   ];
 
-  const filledDays = (form.days || []).filter(day => {
-    const isTrav = day.type === "travel_depart" || day.type === "travel_return";
-    if (isTrav) return day.departureTime || day.arrivalTime || day.date;
-    return day.date || (day.rows || []).some(r => r.timeStart || r.activity);
-  });
+  const filledDays = (form.days || []).filter(day =>
+    day.date || day.dayOfWeek || (day.activities || []).some(a =>
+      a.timeStart || a.activityLabel || a.departureTime
+    )
+  );
 
   for (const day of filledDays) {
-    const dateStr  = formatDate(day.date);
-    const isTravel = day.type === "travel_depart" || day.type === "travel_return";
-    const isAnim   = day.type === "animation";
-    const dayLabel = day.type === "custom"
-      ? (day.customLabel || "Journée")
-      : (DAY_TYPE_LABELS[day.type] || day.type);
+    const dateStr = form.isRecurring
+      ? (["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"][parseInt(day.dayOfWeek)] || day.dayOfWeek || "—")
+      : formatDate(day.date);
 
-    if (isTravel) {
-      const details = [
-        day.departureTime ? `Départ : ${fmt24(day.departureTime)}` : "",
-        day.arrivalTime   ? `Arrivée : ${fmt24(day.arrivalTime)}`  : "",
-        day.transportNote || "",
-      ].filter(Boolean).join("   |   ");
+    const activities = day.activities || [];
+    activities.forEach((act, i) => {
+      const isTravel = act.type === "travel_depart" || act.type === "travel_return";
+      const actLabel = act.type === "custom"
+        ? (act.customLabel || "Activité")
+        : (DAY_TYPE_LABELS[act.type] || act.type || "");
 
-      schedRows.push(new TableRow({ children: [
-        bodyCell([P([Tb(dayLabel)])], 2000, "CFE2F3"),
-        bodyCell([P([Tb(dateStr || "—")])], 1600, "CFE2F3"),
-        bodyCell([P([T(details || "—")])], 2200 + 1560 + 2000, "CFE2F3"),
-      ]}));
+      let horaire = "";
+      let quoi = "";
+      let ou = act.location || "";
+      let bgColor = null;
 
-    } else {
-      const rows = day.rows || [];
-      // Add signup objective row for animation days
-      const extraRows = [];
-      if (isAnim && day.signupObjective) {
-        extraRows.push(new TableRow({ children: [
-          bodyCell([P([Tb("🎯 Objectif", { size: 18 })])], 2000, C.lightYellow),
-          bodyCell([P([T(dateStr || "—")])], 1600, C.lightYellow),
-          bodyCell([P([Tb(day.signupObjective)])], 2200 + 1560 + 2000, C.lightYellow),
-        ]}));
+      if (isTravel) {
+        horaire = [
+          act.departureTime ? `Départ : ${fmt24(act.departureTime)}` : "",
+          act.arrivalTime   ? `Arrivée : ${fmt24(act.arrivalTime)}` : "",
+        ].filter(Boolean).join("  |  ");
+        quoi = act.transportNote || "";
+        bgColor = "CFE2F3";
+      } else {
+        horaire = act.timeStart && act.timeEnd
+          ? `${fmt24(act.timeStart)} – ${fmt24(act.timeEnd)}`
+          : fmt24(act.timeStart) || "";
+        quoi = act.activityLabel || "";
+        bgColor = act.type === "animation" ? C.lightGreen : null;
       }
 
-      rows.forEach((row, i) => {
-        schedRows.push(new TableRow({ children: [
-          i === 0
-            ? bodyCell([P([Tb(dayLabel)])], 2000, C.lightGreen)
-            : new TableCell({ width: { size: 2000, type: WidthType.DXA }, shading: { fill: C.lightGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([T("")])] }),
-          i === 0
-            ? bodyCell([P([Tb(dateStr || "—")])], 1600, C.lightGreen)
-            : new TableCell({ width: { size: 1600, type: WidthType.DXA }, shading: { fill: C.lightGreen, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([T("")])] }),
-          bodyCell([P([T(row.timeStart && row.timeEnd ? `${fmt24(row.timeStart)} – ${fmt24(row.timeEnd)}` : fmt24(row.timeStart) || "")])], 2200),
-          bodyCell([P([T(row.location || "")])], 1560),
-          bodyCell([P([Tb(row.activity || "")])], 2000),
-        ]}));
-      });
-
-      schedRows.push(...extraRows);
-    }
+      schedRows.push(new TableRow({ children: [
+        i === 0
+          ? bodyCell([P([Tb(dateStr || "—")])], 2000, bgColor)
+          : new TableCell({ width: { size: 2000, type: WidthType.DXA }, shading: { fill: bgColor || "FFFFFF", type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([T("")])] }),
+        bodyCell([P([T(horaire)])], 1600, bgColor),
+        bodyCell([P([T(actLabel)])], 2200, bgColor),
+        bodyCell([P([T(ou)])], 1560, bgColor),
+        bodyCell([P([Tb(quoi)])], 2000, bgColor),
+      ]}));
+    });
   }
 
   const scheduleTable = new Table({

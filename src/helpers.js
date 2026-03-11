@@ -36,15 +36,6 @@ export function getFirstDate(ev) {
   return getEventDateRange(ev)[0] || "";
 }
 
-export function blankRow(label = "") {
-  return {
-    id: `row-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    timeStart: "",
-    timeEnd: "",
-    location: "Événement",
-    activity: label,
-  };
-}
 
 export function blankDay() {
   return {

@@ -45,50 +45,5 @@ export function clearSession() {
 }
 
 // ── Sign in with Google ──────────────────────────────────────────────────────
-export async function signInWithGoogle() {
-  await loadScript("https://accounts.google.com/gsi/client");
-
-  return new Promise((res, rej) => {
-    const client = window.google.accounts.id;
-
-    client.initialize({
-      client_id: CLIENT_ID,
-      callback: (response) => {
-        try {
-          // Decode JWT to get user info
-          const payload = JSON.parse(atob(response.credential.split(".")[1]));
-          const email   = payload.email || "";
-
-          if (!email.endsWith("@lufa.com")) {
-            rej(new Error("WRONG_DOMAIN"));
-            return;
-          }
-
-          const user = {
-            name:    payload.name,
-            email:   payload.email,
-            picture: payload.picture,
-          };
-          const session = saveSession(user);
-          res(session);
-        } catch(e) {
-          rej(e);
-        }
-      },
-      auto_select: true,    // auto sign-in if previously logged in
-      hosted_domain: "lufa.com", // only allow @lufa.com
-    });
-
-    // Trigger the One Tap prompt — reject if dismissed so the button shows
-    client.prompt((notification) => {
-      if (notification.isSkippedMoment() || notification.isDismissedMoment()) {
-        rej(new Error("ONE_TAP_DISMISSED"));
-      }
-    });
-
-    // Fallback timeout — if nothing happens in 3s, show the button
-    setTimeout(() => rej(new Error("ONE_TAP_TIMEOUT")), 3000);
-  });
-}
 
 export { CLIENT_ID };

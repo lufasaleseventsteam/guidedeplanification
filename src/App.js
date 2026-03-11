@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { uid } from "./helpers";
 import { loadEvents, saveEvents } from "./storage";
-import { saveToDrive, loadEventsFromDrive, saveEventsToDrive, getMonthFolderUrl } from "./googleDrive";
+import { saveToDrive, deleteDriveFile, loadEventsFromDrive, saveEventsToDrive, getMonthFolderUrl } from "./googleDrive";
 import { generateDocx } from "./docxGenerator";
 import { saveAs } from "file-saver";
 import ListView   from "./views/ListView";
@@ -89,7 +89,7 @@ export default function App() {
       const drive  = await saveToDrive(result.blob, result.fileName, result.mimeType);
 
       const withLink = updated.map(e =>
-        e.id === savedId ? { ...e, attachments, driveLink: drive.shareLink } : e
+        e.id === savedId ? { ...e, attachments, driveLink: drive.shareLink, driveFileId: drive.fileId } : e
       );
       await persist(withLink);
 
@@ -110,6 +110,27 @@ export default function App() {
 
   // ── Delete ─────────────────────────────────────────────────────────────────
   const handleDelete = async (id) => {
+    // Delete the Drive doc file if we have its ID
+    const ev = events.find(e => e.id === id);
+    if (ev) {
+      // Delete main doc
+      if (ev.driveFileId) {
+        try { await deleteDriveFile(ev.driveFileId); } catch(e) { console.error("Drive delete failed:", e); }
+      } else if (ev.driveLink) {
+        // Extract file ID from URL as fallback
+        const match = ev.driveLink.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (match) try { await deleteDriveFile(match[1]); } catch(e) { console.error("Drive delete failed:", e); }
+      }
+      // Delete any attached files too
+      for (const att of (ev.attachments || [])) {
+        if (att.fileId) {
+          try { await deleteDriveFile(att.fileId); } catch(e) { console.error("Attachment delete failed:", e); }
+        } else if (att.driveLink) {
+          const match = att.driveLink.match(/\/d\/([a-zA-Z0-9_-]+)/);
+          if (match) try { await deleteDriveFile(match[1]); } catch(e) {}
+        }
+      }
+    }
     await persist(events.filter(e => e.id !== id));
     setDetailId(null);
     setView("list");
@@ -122,7 +143,7 @@ export default function App() {
       const result = await generateDocx(ev);
       const drive  = await saveToDrive(result.blob, result.fileName, result.mimeType);
       // Update driveLink on event
-      const updated = events.map(e => e.id === ev.id ? { ...e, driveLink: drive.shareLink } : e);
+      const updated = events.map(e => e.id === ev.id ? { ...e, driveLink: drive.shareLink, driveFileId: drive.fileId } : e);
       await persist(updated);
       setDriveResult({ ...drive, blob: result.blob, fileName: result.fileName, mimeType: result.mimeType });
     } catch(e) {
@@ -280,6 +301,7 @@ export default function App() {
         events={events}
         loading={loading}
         onNew={() => { setEditingId(null); setDuplicateData(null); setView("form"); }}
+        onDelete={handleDelete}
         onDetail={ev => { setDetailId(ev.id); setView("detail"); }}
         onGenerate={handleGenerate}
         generating={generating}
