@@ -116,6 +116,13 @@ export async function generateDocx(form) {
 
   // ── Schedule ───────────────────────────────────────────────────────────────
   const schedRows = [
+    new TableRow({ children: [new TableCell({
+      columnSpan: 5,
+      width: { size: 11760, type: WidthType.DXA },
+      shading: { fill: C.headerGreen, type: ShadingType.CLEAR },
+      borders: bords, margins: cm,
+      children: [P([Tb("HORAIRE — montage, livraisons, animation, démontage", { color: "000000", size: 20 })], { alignment: AlignmentType.CENTER })],
+    })]}),
     new TableRow({ children: [
       hdrCell("Date", 2400),
       hdrCell("Type", 2400),
@@ -222,21 +229,20 @@ export async function generateDocx(form) {
       new TableRow({ children: [new TableCell({
         width: { size: 11760, type: WidthType.DXA }, borders: bords, margins: cmLg,
         children: [
-          P([Tb("• Accès : "), T("Voir le plan d'accès ci-bas.")], { spacing: { before: 80, after: 80 } }),
-          firstDateStr ? P([T(`📆 ${firstDateStr}`)], { spacing: { before: 80, after: 80 } }) : sp(),
-          P([T(`📍 ${form.adresse || "—"}`)], { spacing: { before: 80, after: 80 } }),
+          P([Tb("• Accès : "), T("Voir le plan d'accès ci-bas.")]),
           ...(form.adresse ? [
             P([
+              Tb("📍 Adresse : "),
               new ExternalHyperlink({
                 link: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.adresse)}`,
                 children: [T(form.adresse, { color: C.linkBlue, underline: {} })],
               }),
-            ], { spacing: { before: 0, after: 60 } }),
-            P([T("⚠️ SVP valider que l'adresse dans Google Maps est la bonne.", { color: "cc0000", size: 18 })], { spacing: { before: 0, after: 80 } }),
-          ] : []),
-          ...(form.camionElectrique ? [P([Tb("⚡🚚 Camion électrique : "), T("Prévoir le camion électrique pour cet événement.")], { spacing: { before: 80, after: 80 } })] : []),
-          ...(form.boothNumber ? [P([Tb("• Kiosque : "), T(form.boothNumber)], { spacing: { before: 80, after: 80 } })] : []),
-          P([Tb("• Stationnement : "), T(form.stationnement || "Voir info et/ou photo plus bas, le cas échéant.")], { spacing: { before: 80, after: 80 } }),
+            ]),
+            P([T("    ⚠️ SVP valider que l'adresse dans Google Maps est la bonne.", { color: "cc0000", size: 18 })]),
+          ] : [P([Tb("📍 Adresse : "), T("—")])]),
+          ...(form.camionElectrique ? [P([Tb("⚡🚚 Camion électrique : "), T("Prévoir le camion électrique pour cet événement.")])] : []),
+          ...(form.boothNumber ? [P([Tb("• Kiosque : "), T(form.boothNumber)])] : []),
+          P([Tb("• Stationnement : "), T(form.stationnement || "Voir info et/ou photo plus bas, le cas échéant.")]),
         ],
       })]}),
     ],
@@ -252,8 +258,7 @@ export async function generateDocx(form) {
       ]}),
       new TableRow({ children: [
         new TableCell({ width: { size: 5880, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [
-          P([Tb("• Contact : "), T(form.contactNom || "—")]),
-          form.contactTel ? P([T(`  ${form.contactTel}`)]) : sp(),
+          P([Tb("• Contact : "), T(form.contactNom || "—"), ...(form.contactTel ? [T("   "), T(form.contactTel)] : [])]),
           form.wifi    ? P([Tb("• WIFI : "),  T(form.wifi)])    : P([T("")]),
           form.wifiMdp ? P([Tb("• MDP : "),   T(form.wifiMdp)]) : P([T("")]),
         ]}),
@@ -297,7 +302,8 @@ export async function generateDocx(form) {
       ]}),
       new TableRow({ children: [
         new TableCell({ width: { size: 5880, type: WidthType.DXA }, borders: bords, margins: cmLg, children: [
-          P([Tb("• Matériel nécessaire : "), new ExternalHyperlink({ link: "https://lufasaleseventsteam.github.io/inventaire/", children: [T("✅ Confirmer votre prise de matériel (*obligatoire)", { color: "cc0000", bold: true, underline: {} })] })]),
+          P([Tb("• Matériel nécessaire :")]),
+          P([new ExternalHyperlink({ link: "https://lufasaleseventsteam.github.io/inventaire/", children: [T("  ✅ Confirmer votre prise de matériel (*obligatoire)", { color: "cc0000", bold: true, underline: {} })] })]),
           new Table({
             width: { size: 4200, type: WidthType.DXA }, columnWidths: [2100, 2100],
             rows: [new TableRow({ children: [
@@ -386,7 +392,6 @@ export async function generateDocx(form) {
     titleTable,
     ...(signupBanner ? [sp(), signupBanner] : []),
     sp(),
-    bannerTable("HORAIRE — montage, livraisons, animation, démontage"),
     scheduleTable,
     sp(),
     accessTable,
