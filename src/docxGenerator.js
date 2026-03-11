@@ -96,13 +96,21 @@ export async function generateDocx(form) {
   });
 
   // ── Signup objective banner (if set) ───────────────────────────────────────
-  const signupBanner = form.signupObjectiveTotal ? new Table({
+  const cpa = (form.signupObjectiveTotal && form.eventCost)
+    ? (parseFloat(form.eventCost) / parseFloat(form.signupObjectiveTotal)).toFixed(2)
+    : null;
+  const signupBanner = (form.signupObjectiveTotal || form.eventCost) ? new Table({
     width: { size: 11760, type: WidthType.DXA }, columnWidths: [11760],
     rows: [new TableRow({ children: [new TableCell({
       width: { size: 11760, type: WidthType.DXA },
       shading: { fill: C.lightYellow, type: ShadingType.CLEAR }, borders: bords,
       margins: cm,
-      children: [P([Tb("🎯 OBJECTIF INSCRIPTIONS", { size: 22 })], { alignment: AlignmentType.CENTER, spacing: { before: 60, after: 20 } }), P([Tb(form.signupObjectiveTotal, { size: 72, color: "000000" })], { alignment: AlignmentType.CENTER, spacing: { before: 20, after: 60 } })],
+      children: [P([
+        ...(form.signupObjectiveTotal ? [Tb("🎯 Objectif : ", { size: 24 }), T(form.signupObjectiveTotal + " inscriptions", { size: 24 })] : []),
+        ...(form.signupObjectiveTotal && form.eventCost ? [T("   |   ", { size: 24 })] : []),
+        ...(form.eventCost ? [Tb("💰 Coût : ", { size: 24 }), T(form.eventCost + " $", { size: 24 })] : []),
+        ...(cpa ? [T("   |   ", { size: 24 }), Tb("CPA cible : ", { size: 24 }), T(cpa + " $", { size: 24 })] : []),
+      ], { alignment: AlignmentType.CENTER, spacing: { before: 80, after: 80 } })],
     })] })],
   }) : null;
 
@@ -160,7 +168,10 @@ export async function generateDocx(form) {
         horaire = act.timeStart && act.timeEnd
           ? `${fmt24(act.timeStart)} – ${fmt24(act.timeEnd)}`
           : fmt24(act.timeStart) || "";
-        quoi = (act.activityLabel || "").trim();
+        // Don't show activityLabel if it's just the default type name
+        const typeDefault = (DAY_TYPE_LABELS[act.type] || "").replace(/^[^\w]+/, "").trim().toLowerCase();
+        const userLabel = (act.activityLabel || "").trim();
+        quoi = userLabel.toLowerCase() === typeDefault ? "" : userLabel;
       }
       rowBg = dayBg; // all rows in a day share the same colour
 
@@ -373,11 +384,15 @@ export async function generateDocx(form) {
   const docChildren = [
     logoPara,
     titleTable,
-    ...(signupBanner ? [signupBanner] : []),
+    ...(signupBanner ? [sp(), signupBanner] : []),
+    sp(),
     bannerTable("HORAIRE (montage, livraisons, animation, démontage)"),
     scheduleTable,
+    sp(),
     accessTable,
+    sp(),
     contactTable,
+    sp(),
     logTable,
     ...attachSec,
     ...notesSec,
