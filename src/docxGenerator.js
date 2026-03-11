@@ -317,6 +317,28 @@ export async function generateDocx(form) {
     } catch(e) { /* skip */ }
   }
 
+  // ── Documents joints ───────────────────────────────────────────────────────
+  const attachments = (form.attachments || []).filter(a => a.driveLink);
+  const attachSec = attachments.length > 0 ? [
+    sp(),
+    bannerTable("DOCUMENTS JOINTS"),
+    new Table({
+      width: { size: 9360, type: WidthType.DXA }, columnWidths: [9360],
+      rows: [new TableRow({ children: [new TableCell({
+        width: { size: 9360, type: WidthType.DXA }, borders: bords, margins: cmLg,
+        children: attachments.map(att =>
+          P([
+            T(`${att.type === "application/pdf" ? "📄" : "📝"} `),
+            new ExternalHyperlink({
+              link: att.driveLink,
+              children: [T(att.name, { color: C.linkBlue, underline: {} })],
+            }),
+          ])
+        ),
+      })] })],
+    }),
+  ] : [];
+
   // ── Assemble ───────────────────────────────────────────────────────────────
   const docChildren = [
     titleTable,
@@ -330,6 +352,7 @@ export async function generateDocx(form) {
     contactTable,
     sp(),
     logTable,
+    ...attachSec,
     ...notesSec,
     ...mapChildren,
   ];

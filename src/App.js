@@ -66,38 +66,20 @@ export default function App() {
     }
     await persist(updated);
     setEditingId(null);
-    setView(detailId ? "detail" : "list");
+    const targetView = detailId ? "detail" : "list";
+    setView(targetView);
 
-    // Auto-generate docx and upload to Drive
-    try {
-      const result = await generateDocx(savedEvent);
-      const drive = await saveToDrive(result.blob, result.fileName, result.mimeType);
-
-      // Upload any new attachments (those with a .file property, not yet on Drive)
-      const attachments = savedEvent.attachments || [];
-      const uploadedAttachments = await Promise.all(
-        attachments.map(async att => {
-          if (!att.file) return att; // already uploaded, keep as-is
-          try {
-            const attDrive = await saveToDrive(att.file, att.name, att.type);
-            return { id: att.id, name: att.name, size: att.size, type: att.type, driveLink: attDrive.shareLink };
-          } catch(e) {
-            console.error("Attachment upload failed:", e);
-            return { id: att.id, name: att.name, size: att.size, type: att.type };
-          }
-        })
-      );
-
-      // Store driveLink + cleaned attachments on the event
-      const withLink = updated.map(e => e.id === savedId
-        ? { ...e, driveLink: drive.shareLink, attachments: uploadedAttachments }
-        : e
-      );
-      await persist(withLink);
-      setDriveResult({ ...drive, blob: result.blob, fileName: result.fileName, mimeType: result.mimeType });
-    } catch(e) {
-      console.error("Auto-save to Drive failed:", e);
-    }
+    // Auto-generate docx and upload to Drive (non-blocking)
+    generateDocx(savedEvent).then(result =>
+      saveToDrive(result.blob, result.fileName, result.mimeType).then(drive => {
+        const withLink = updated.map(e => e.id === savedId
+          ? { ...e, driveLink: drive.shareLink }
+          : e
+        );
+        persist(withLink);
+        setDriveResult({ ...drive, blob: result.blob, fileName: result.fileName, mimeType: result.mimeType });
+      })
+    ).catch(e => console.error("Auto-save to Drive failed:", e));
   };
 
   const handleDelete = async id => {
@@ -207,7 +189,8 @@ export default function App() {
   if (view === "form") {
     return (
       <FormView
-        initial={editingId ? events.find(e => e.id === editingId) : duplicateData}
+        key={editingId || "new"}
+        initial={editingId ? (events.find(e => e.id === editingId) || duplicateData) : duplicateData}
         isEdit={!!editingId}
         onSave={(form) => { setDuplicateData(null); handleSave(form); }}
         onCancel={() => { setEditingId(null); setDuplicateData(null); setView(detailId ? "detail" : "list"); }}
@@ -223,7 +206,7 @@ export default function App() {
         <DriveModal />
         <DetailView
           ev={ev}
-          onEdit={ev => { setEditingId(ev.id); setView("form"); }}
+          onEdit={ev => { setEditingId(ev.id); setDuplicateData(null); setView("form"); }}
           onDelete={handleDelete}
           onBack={() => setView("list")}
           onGenerate={handleGenerate}
