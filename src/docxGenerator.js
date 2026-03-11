@@ -136,7 +136,7 @@ export async function generateDocx(form) {
       let horaire = "";
       let quoi = "";
       let ou = act.location || "";
-      let bgColor = null;
+      let bgColor = C.white;
 
       if (isTravel) {
         horaire = [
@@ -150,13 +150,13 @@ export async function generateDocx(form) {
           ? `${fmt24(act.timeStart)} – ${fmt24(act.timeEnd)}`
           : fmt24(act.timeStart) || "";
         quoi = act.activityLabel || "";
-        bgColor = act.type === "animation" ? C.lightGreen : null;
+        bgColor = act.type === "animation" ? C.lightGreen : C.white;
       }
 
       schedRows.push(new TableRow({ children: [
         i === 0
           ? bodyCell([P([Tb(dateStr || "—")])], 2000, bgColor)
-          : new TableCell({ width: { size: 2000, type: WidthType.DXA }, shading: { fill: bgColor || "FFFFFF", type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([T("")])] }),
+          : new TableCell({ width: { size: 2000, type: WidthType.DXA }, shading: { fill: bgColor, type: ShadingType.CLEAR }, borders: bords, margins: cm, children: [P([T("")])] }),
         bodyCell([P([T(horaire)])], 1600, bgColor),
         bodyCell([P([T(actLabel)])], 2200, bgColor),
         bodyCell([P([T(ou)])], 1560, bgColor),
