@@ -370,8 +370,7 @@ export async function generateDocx(form) {
     }],
   });
 
-  const buffer   = await Packer.toBuffer(doc);
-  const blob     = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+  const blob     = await Packer.toBlob(doc);
   const safe     = (form.eventName || "evenement").replace(/[^a-zA-Z0-9\-_àâéèêëîïôùûüç ]/g, "_").trim().replace(/ /g, "_");
   const first    = (form.days || []).find(d => d.date);
   const fileName = `${safe}_${first ? first.date : "date"}.docx`;
