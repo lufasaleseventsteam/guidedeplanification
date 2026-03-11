@@ -72,8 +72,27 @@ export default function App() {
     try {
       const result = await generateDocx(savedEvent);
       const drive = await saveToDrive(result.blob, result.fileName, result.mimeType);
-      // Store driveLink on the event
-      const withLink = updated.map(e => e.id === savedId ? { ...e, driveLink: drive.shareLink } : e);
+
+      // Upload any new attachments (those with a .file property, not yet on Drive)
+      const attachments = savedEvent.attachments || [];
+      const uploadedAttachments = await Promise.all(
+        attachments.map(async att => {
+          if (!att.file) return att; // already uploaded, keep as-is
+          try {
+            const attDrive = await saveToDrive(att.file, att.name, att.type);
+            return { id: att.id, name: att.name, size: att.size, type: att.type, driveLink: attDrive.shareLink };
+          } catch(e) {
+            console.error("Attachment upload failed:", e);
+            return { id: att.id, name: att.name, size: att.size, type: att.type };
+          }
+        })
+      );
+
+      // Store driveLink + cleaned attachments on the event
+      const withLink = updated.map(e => e.id === savedId
+        ? { ...e, driveLink: drive.shareLink, attachments: uploadedAttachments }
+        : e
+      );
       await persist(withLink);
       setDriveResult({ ...drive, blob: result.blob, fileName: result.fileName, mimeType: result.mimeType });
     } catch(e) {

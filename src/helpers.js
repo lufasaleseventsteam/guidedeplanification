@@ -86,6 +86,7 @@ export const defaultForm = {
   instructions: "",
   notesInternes: "",
   mapImages: [],
+  attachments: [],
   boothNumber: "",          // numéro de kiosque / emplacement
   camionElectrique: false,  // checkbox véhicule électrique
   isOutdoor: false,         // indoor vs outdoor event

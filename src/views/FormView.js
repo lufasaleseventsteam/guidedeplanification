@@ -45,7 +45,7 @@ function AddressField({ value, onChange }) {
 
 export default function FormView({ initial, onSave, onCancel, isEdit }) {
   const initForm = () => {
-    if (initial) return { ...defaultForm, ...initial, mapImages: initial.mapImages || [] };
+    if (initial) return { ...defaultForm, ...initial, mapImages: initial.mapImages || [], attachments: initial.attachments || [] };
     return {
       ...defaultForm,
       days: [
@@ -77,6 +77,15 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
 
   const updateImage = (id, val) => setForm(f => ({ ...f, mapImages: f.mapImages.map(i => i.id === id ? val : i) }));
   const removeImage = id => setForm(f => ({ ...f, mapImages: f.mapImages.filter(i => i.id !== id) }));
+
+  const attachRef = React.useRef();
+  const handleAttach = e => {
+    const files = Array.from(e.target.files);
+    const loaded = files.map(file => ({ id: uid(), name: file.name, size: file.size, type: file.type, file }));
+    setForm(f => ({ ...f, attachments: [...(f.attachments || []), ...loaded] }));
+    e.target.value = "";
+  };
+  const removeAttachment = id => setForm(f => ({ ...f, attachments: (f.attachments || []).filter(a => a.id !== id) }));
 
   const handleSave = async () => {
     if (!form.eventName.trim()) { setError("Le nom de l'événement est requis."); return; }
@@ -257,6 +266,38 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
             + Ajouter une ou plusieurs images
           </button>
           <input autoComplete="off" ref={fileRef} type="file" accept="image/*" multiple onChange={handleMapUpload} style={{ display: "none" }} />
+        </Fld>
+      </Card>
+
+      <Card>
+        <SecTitle>📎 Documents joints</SecTitle>
+        <Fld label="Joindre des documents (PDF, Word — uploadés sur Drive à la sauvegarde)">
+          {(form.attachments || []).length === 0 && (
+            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 8 }}>Aucun document joint.</div>
+          )}
+          {(form.attachments || []).map(att => (
+            <div key={att.id} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "8px 12px", marginBottom: 6 }}>
+              <span style={{ fontSize: 18 }}>{att.type === "application/pdf" ? "📄" : "📝"}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, color: "#e8f0e9", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{att.name}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{(att.size / 1024).toFixed(0)} KB</div>
+              </div>
+              {att.driveLink && (
+                <a href={att.driveLink} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: 12, color: "#7dc494", textDecoration: "none" }}>📂</a>
+              )}
+              <button onClick={() => removeAttachment(att.id)}
+                style={{ background: "rgba(239,83,80,0.15)", border: "none", borderRadius: 6, color: "#ef9a9a", padding: "4px 10px", cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>
+                ✕
+              </button>
+            </div>
+          ))}
+          <button onClick={() => attachRef.current.click()}
+            style={{ width: "100%", background: "rgba(74,124,89,0.12)", border: "2px dashed rgba(74,124,89,0.4)", borderRadius: 8, padding: "12px", color: PALETTE.greenLight, cursor: "pointer", fontSize: 13, fontFamily: "inherit", fontWeight: 600, marginTop: 4 }}>
+            + Joindre un document
+          </button>
+          <input ref={attachRef} type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            multiple onChange={handleAttach} style={{ display: "none" }} />
         </Fld>
       </Card>
 

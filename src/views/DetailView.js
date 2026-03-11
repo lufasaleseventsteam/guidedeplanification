@@ -96,6 +96,33 @@ export default function DetailView({ ev, onEdit, onDelete, onBack, onGenerate, g
         ))}
       </Card>
 
+      {/* Attachments */}
+      {(ev.attachments || []).length > 0 && (
+        <Card>
+          <SecTitle>📎 Documents joints</SecTitle>
+          {ev.attachments.map(att => (
+            <div key={att.id} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "8px 12px", marginBottom: 6 }}>
+              <span style={{ fontSize: 18 }}>{att.type === "application/pdf" ? "📄" : "📝"}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, color: "#e8f0e9", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{att.name}</div>
+              </div>
+              {att.driveLink && (
+                <>
+                  <button onClick={() => navigator.clipboard.writeText(att.driveLink)}
+                    style={{ background: "rgba(74,124,89,0.3)", border: "none", borderRadius: 6, color: "#7dc494", padding: "5px 10px", cursor: "pointer", fontSize: 12, fontFamily: "inherit", whiteSpace: "nowrap", fontWeight: 700 }}>
+                    📋 Copier
+                  </button>
+                  <a href={att.driveLink} target="_blank" rel="noopener noreferrer"
+                    style={{ background: "rgba(74,124,89,0.3)", borderRadius: 6, color: "#7dc494", padding: "5px 10px", fontSize: 12, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+                    📂 Ouvrir
+                  </a>
+                </>
+              )}
+            </div>
+          ))}
+        </Card>
+      )}
+
       {/* Internal notes */}
       {ev.notesInternes && (
         <Card style={{ background: "rgba(255,235,59,0.05)", border: "1px solid rgba(255,235,59,0.18)" }}>
