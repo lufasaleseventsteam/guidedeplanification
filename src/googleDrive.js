@@ -196,7 +196,7 @@ export async function loadEventsFromDrive() {
     const file = await findDbFile();
     if (!file) return []; // no DB yet — fresh start
     const resp = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,
+      `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&supportsAllDrives=true`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     if (!resp.ok) return [];
