@@ -193,17 +193,29 @@ async function findDbFile() {
 export async function loadEventsFromDrive() {
   try {
     const token = await getAccessToken();
+    console.log("[Drive] token ok, searching for events-db.json in parent folder", PARENT_FOLDER);
     const file = await findDbFile();
-    if (!file) return []; // no DB yet — fresh start
+    console.log("[Drive] findDbFile result:", file);
+    if (!file) {
+      console.warn("[Drive] No events-db.json found — returning empty");
+      return [];
+    }
+    console.log("[Drive] Fetching file contents, id:", file.id);
     const resp = await fetch(
       `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&supportsAllDrives=true`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (!resp.ok) return [];
+    console.log("[Drive] fetch status:", resp.status, resp.statusText);
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.error("[Drive] fetch failed:", errText);
+      return [];
+    }
     const data = await resp.json();
+    console.log("[Drive] parsed data, isArray:", Array.isArray(data), "length:", Array.isArray(data) ? data.length : "N/A");
     return Array.isArray(data) ? data : [];
   } catch (e) {
-    console.error("loadEventsFromDrive error:", e);
+    console.error("[Drive] loadEventsFromDrive error:", e);
     return [];
   }
 }
