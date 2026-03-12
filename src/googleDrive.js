@@ -68,20 +68,20 @@ async function getAccessToken() {
 }
 
 // ── Drive API helpers ────────────────────────────────────────────────────────
-async function findFolder(name, parentId) {
+async function findFolders(name, parentId) {
   const token = await getAccessToken();
   const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`;
   const resp = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`,
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,createdTime)&orderBy=createdTime&includeItemsFromAllDrives=true&supportsAllDrives=true`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
   const data = await resp.json();
-  return data.files?.[0] || null;
+  return data.files || [];
 }
 
 async function createFolder(name, parentId) {
   const token = await getAccessToken();
-  const resp = await fetch("https://www.googleapis.com/drive/v3/files", {
+  const resp = await fetch("https://www.googleapis.com/drive/v3/files?supportsAllDrives=true", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -94,19 +94,24 @@ async function createFolder(name, parentId) {
 }
 
 async function getOrCreateMonthFolder() {
-  const now    = new Date();
-  const year   = now.getFullYear();
-  const month  = now.getMonth(); // 0-indexed
-  const mm     = String(month + 1).padStart(2, "0");
-  const name   = `${year}-${mm} — ${FR_MONTHS[month]} ${year}`;
+  const now   = new Date();
+  const year  = now.getFullYear();
+  const month = now.getMonth();
+  const mm    = String(month + 1).padStart(2, "0");
+  const name  = `${year}-${mm} — ${FR_MONTHS[month]} ${year}`;
 
-  let folder = await findFolder(name, PARENT_FOLDER);
-  if (!folder) {
-    // Another user may have just created it — create then re-check
+  // First check: any existing folders?
+  let folders = await findFolders(name, PARENT_FOLDER);
+  if (folders.length === 0) {
+    // None found — try to create one (another user might do the same simultaneously)
     try { await createFolder(name, PARENT_FOLDER); } catch(e) {}
-    folder = await findFolder(name, PARENT_FOLDER);
+    // Wait briefly then re-query — both users will now see both folders
+    await new Promise(r => setTimeout(r, 800));
+    folders = await findFolders(name, PARENT_FOLDER);
   }
-  return folder.id;
+  // Always use the oldest folder (createdTime ascending = first in list)
+  // This ensures all users converge on the same folder even if duplicates exist
+  return folders[0].id;
 }
 
 async function uploadFile(blob, fileName, mimeType, folderId, convertToGoogleDoc = false) {
@@ -123,7 +128,7 @@ async function uploadFile(blob, fileName, mimeType, folderId, convertToGoogleDoc
   form.append("file", blob, fileName);
 
   const resp = await fetch(
-    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink&supportsAllDrives=true",
     { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form }
   );
   if (!resp.ok) {
@@ -146,7 +151,7 @@ async function makePublicReadable(fileId) {
 export async function deleteDriveFile(fileId) {
   try {
     const token = await getAccessToken();
-    await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+    await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?supportsAllDrives=true`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -176,8 +181,9 @@ const DB_FILE_NAME = "events-db.json";
 async function findDbFile() {
   const token = await getAccessToken();
   const q = `name='${DB_FILE_NAME}' and '${PARENT_FOLDER}' in parents and trashed=false`;
+  // includeItemsFromAllDrives ensures we see files created by other users
   const resp = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`,
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)&includeItemsFromAllDrives=true&supportsAllDrives=true`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
   const data = await resp.json();
@@ -213,7 +219,7 @@ export async function saveEventsToDrive(events) {
     form.append("metadata", new Blob([JSON.stringify({ name: DB_FILE_NAME })], { type: "application/json" }));
     form.append("file", blob, DB_FILE_NAME);
     await fetch(
-      `https://www.googleapis.com/upload/drive/v3/files/${existing.id}?uploadType=multipart`,
+      `https://www.googleapis.com/upload/drive/v3/files/${existing.id}?uploadType=multipart&supportsAllDrives=true`,
       { method: "PATCH", headers: { Authorization: `Bearer ${token}` }, body: form }
     );
   } else {
@@ -222,7 +228,7 @@ export async function saveEventsToDrive(events) {
     form.append("metadata", new Blob([JSON.stringify({ name: DB_FILE_NAME, parents: [PARENT_FOLDER] })], { type: "application/json" }));
     form.append("file", blob, DB_FILE_NAME);
     await fetch(
-      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true",
       { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form }
     );
   }
