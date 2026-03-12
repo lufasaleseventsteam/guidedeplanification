@@ -147,6 +147,15 @@ async function makePublicReadable(fileId) {
   });
 }
 
+async function makePublicWritable(fileId) {
+  const token = await getAccessToken();
+  await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ role: "writer", type: "anyone" }),
+  });
+}
+
 // ── Delete a file from Drive ──────────────────────────────────────────────────
 export async function deleteDriveFile(fileId) {
   try {
@@ -177,11 +186,20 @@ export async function saveToDrive(blob, fileName, mimeType) {
 
 // ── Shared events database ───────────────────────────────────────────────────
 const DB_FILE_NAME = "events-db.json";
+// Hardcoded file ID — create this file once from an admin account, share with
+// Lufa Farms (company-wide), then paste the file ID here.
+// To get the ID: open the file in Drive, copy the ID from the URL:
+// https://drive.google.com/file/d/FILE_ID_HERE/view
+const DB_FILE_ID = "1v2RESs7M8AjMo45gtWFPTOhVS2gdFbjq";
 
 async function findDbFile() {
+  // If we have a hardcoded ID, use it directly — no search needed
+  if (DB_FILE_ID && DB_FILE_ID !== "PASTE_FILE_ID_HERE") {
+    return { id: DB_FILE_ID, name: DB_FILE_NAME };
+  }
+  // Fallback: search by name (only works if file is owned by current user)
   const token = await getAccessToken();
   const q = `name='${DB_FILE_NAME}' and '${PARENT_FOLDER}' in parents and trashed=false`;
-  // includeItemsFromAllDrives ensures we see files created by other users
   const resp = await fetch(
     `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)&includeItemsFromAllDrives=true&supportsAllDrives=true`,
     { headers: { Authorization: `Bearer ${token}` } }
@@ -201,11 +219,17 @@ export async function loadEventsFromDrive() {
       return [];
     }
     console.log("[Drive] Fetching file contents, id:", file.id);
-    const resp = await fetch(
+    let resp = await fetch(
       `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&supportsAllDrives=true`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     console.log("[Drive] fetch status:", resp.status, resp.statusText);
+    // If forbidden (file owned by another user), try public URL fallback
+    if (resp.status === 403 || resp.status === 404) {
+      console.warn("[Drive] Auth fetch failed, trying public export URL...");
+      resp = await fetch(`https://drive.google.com/uc?export=download&id=${file.id}`);
+      console.log("[Drive] public fetch status:", resp.status);
+    }
     if (!resp.ok) {
       const errText = await resp.text();
       console.error("[Drive] fetch failed:", errText);
@@ -239,10 +263,13 @@ export async function saveEventsToDrive(events) {
     const form = new FormData();
     form.append("metadata", new Blob([JSON.stringify({ name: DB_FILE_NAME, parents: [PARENT_FOLDER] })], { type: "application/json" }));
     form.append("file", blob, DB_FILE_NAME);
-    await fetch(
-      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true",
+    const createResp = await fetch(
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id",
       { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form }
     );
+    const created = await createResp.json();
+    // Make the DB file writable by anyone so all team members can read/write it
+    if (created.id) await makePublicWritable(created.id);
   }
 }
 
