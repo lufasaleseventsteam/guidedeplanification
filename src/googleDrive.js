@@ -3,7 +3,7 @@
 
 const CLIENT_ID    = "501413490319-4pu387normemfmcna5bjc5vniaecce83.apps.googleusercontent.com";
 const PARENT_FOLDER = "1Ttn32tDLv_OvbBvRmnXn7rWGsIm-rFLm";
-const SCOPES       = "https://www.googleapis.com/auth/drive.file";
+const SCOPES       = "https://www.googleapis.com/auth/drive";
 
 const FR_MONTHS = [
   "Janvier","Février","Mars","Avril","Mai","Juin",
@@ -219,17 +219,12 @@ export async function loadEventsFromDrive() {
       return [];
     }
     console.log("[Drive] Fetching file contents, id:", file.id);
+    // Use the Drive API download endpoint with auth token
     let resp = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&supportsAllDrives=true`,
+      `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     console.log("[Drive] fetch status:", resp.status, resp.statusText);
-    // If forbidden (file owned by another user), try public URL fallback
-    if (resp.status === 403 || resp.status === 404) {
-      console.warn("[Drive] Auth fetch failed, trying public export URL...");
-      resp = await fetch(`https://drive.google.com/uc?export=download&id=${file.id}`);
-      console.log("[Drive] public fetch status:", resp.status);
-    }
     if (!resp.ok) {
       const errText = await resp.text();
       console.error("[Drive] fetch failed:", errText);
