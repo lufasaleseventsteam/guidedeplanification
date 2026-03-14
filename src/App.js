@@ -44,6 +44,7 @@ export default function App() {
 
   // ── Sync from Drive ────────────────────────────────────────────────────────
   const handleDriveSync = async () => {
+    console.log("[Sync] button clicked");
     setDriveSyncing(true);
     try {
       const remoteEvs = await loadEventsFromDrive();

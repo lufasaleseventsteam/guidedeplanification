@@ -199,15 +199,19 @@ function supabaseHeaders() {
 }
 
 export async function loadEventsFromDrive() {
+  console.log("[Supabase] Loading events...");
   const resp = await fetch(
     `${SUPABASE_URL}/rest/v1/events?select=id,data,updated_at&order=updated_at.desc`,
     { headers: supabaseHeaders() }
   );
+  console.log("[Supabase] Response status:", resp.status);
   if (!resp.ok) {
     const err = await resp.text();
+    console.error("[Supabase] Load error:", err);
     throw new Error(`[Supabase] Load failed: ${err}`);
   }
   const rows = await resp.json();
+  console.log("[Supabase] Rows received:", rows.length, rows);
   return rows.map(r => r.data);
 }
 
