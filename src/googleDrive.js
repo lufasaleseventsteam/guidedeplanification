@@ -184,89 +184,62 @@ export async function saveToDrive(blob, fileName, mimeType) {
 }
 
 
-// ── Shared events database ───────────────────────────────────────────────────
-const DB_FILE_NAME = "events-db.json";
-// Hardcoded file ID — create this file once from an admin account, share with
-// Lufa Farms (company-wide), then paste the file ID here.
-// To get the ID: open the file in Drive, copy the ID from the URL:
-// https://drive.google.com/file/d/FILE_ID_HERE/view
-const DB_FILE_ID = "1v2RESs7M8AjMo45gtWFPTOhVS2gdFbjq";
+// ── Shared events database (Supabase) ────────────────────────────────────────
+// All users read/write the same Supabase table — no ownership issues.
+const SUPABASE_URL = "https://jrydofpleiwjyyeeohvq.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyeWRvZnBsZWl3anl5ZWVvaHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NjQyMDUsImV4cCI6MjA4OTA0MDIwNX0.lCDmSsIrREWfGH5F2Cg7KlfiW-q_XPckK8Xnzgpeo_o";
 
-async function findDbFile() {
-  // If we have a hardcoded ID, use it directly — no search needed
-  if (DB_FILE_ID && DB_FILE_ID !== "PASTE_FILE_ID_HERE") {
-    return { id: DB_FILE_ID, name: DB_FILE_NAME };
-  }
-  // Fallback: search by name (only works if file is owned by current user)
-  const token = await getAccessToken();
-  const q = `name='${DB_FILE_NAME}' and '${PARENT_FOLDER}' in parents and trashed=false`;
-  const resp = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)&includeItemsFromAllDrives=true&supportsAllDrives=true`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-  const data = await resp.json();
-  return data.files?.[0] || null;
+function supabaseHeaders() {
+  return {
+    "Content-Type": "application/json",
+    "apikey": SUPABASE_KEY,
+    "Authorization": `Bearer ${SUPABASE_KEY}`,
+    "Prefer": "return=minimal"
+  };
 }
 
 export async function loadEventsFromDrive() {
-  try {
-    const token = await getAccessToken();
-    console.log("[Drive] token ok, searching for events-db.json in parent folder", PARENT_FOLDER);
-    const file = await findDbFile();
-    console.log("[Drive] findDbFile result:", file);
-    if (!file) {
-      console.warn("[Drive] No events-db.json found — returning empty");
-      return [];
-    }
-    console.log("[Drive] Fetching file contents, id:", file.id);
-    // Use the Drive API download endpoint with auth token
-    let resp = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    console.log("[Drive] fetch status:", resp.status, resp.statusText);
-    if (!resp.ok) {
-      const errText = await resp.text();
-      console.error("[Drive] fetch failed:", errText);
-      return [];
-    }
-    const data = await resp.json();
-    console.log("[Drive] parsed data, isArray:", Array.isArray(data), "length:", Array.isArray(data) ? data.length : "N/A");
-    return Array.isArray(data) ? data : [];
-  } catch (e) {
-    console.error("[Drive] loadEventsFromDrive error:", e);
-    return [];
+  const resp = await fetch(
+    `${SUPABASE_URL}/rest/v1/events?select=id,data,updated_at&order=updated_at.desc`,
+    { headers: supabaseHeaders() }
+  );
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`[Supabase] Load failed: ${err}`);
   }
+  const rows = await resp.json();
+  return rows.map(r => r.data);
 }
 
 export async function saveEventsToDrive(events) {
-  const token = await getAccessToken();
-  const blob = new Blob([JSON.stringify(events)], { type: "application/json" });
-  const existing = await findDbFile();
+  // Upsert each event individually by id
+  const rows = events.map(ev => ({
+    id: ev.id,
+    data: ev,
+    updated_at: new Date().toISOString()
+  }));
 
-  if (existing) {
-    // Update existing file
-    const form = new FormData();
-    form.append("metadata", new Blob([JSON.stringify({ name: DB_FILE_NAME })], { type: "application/json" }));
-    form.append("file", blob, DB_FILE_NAME);
-    await fetch(
-      `https://www.googleapis.com/upload/drive/v3/files/${existing.id}?uploadType=multipart&supportsAllDrives=true`,
-      { method: "PATCH", headers: { Authorization: `Bearer ${token}` }, body: form }
-    );
-  } else {
-    // Create new file
-    const form = new FormData();
-    form.append("metadata", new Blob([JSON.stringify({ name: DB_FILE_NAME, parents: [PARENT_FOLDER] })], { type: "application/json" }));
-    form.append("file", blob, DB_FILE_NAME);
-    const createResp = await fetch(
-      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id",
-      { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form }
-    );
-    const created = await createResp.json();
-    // Make the DB file writable by anyone so all team members can read/write it
-    if (created.id) await makePublicWritable(created.id);
+  const resp = await fetch(
+    `${SUPABASE_URL}/rest/v1/events`,
+    {
+      method: "POST",
+      headers: { ...supabaseHeaders(), "Prefer": "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify(rows)
+    }
+  );
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`[Supabase] Save failed: ${err}`);
   }
 }
+
+export async function deleteEventFromDb(eventId) {
+  await fetch(
+    `${SUPABASE_URL}/rest/v1/events?id=eq.${encodeURIComponent(eventId)}`,
+    { method: "DELETE", headers: supabaseHeaders() }
+  );
+}
+
 
 // ── Get current month's Drive folder URL ────────────────────────────────────
 export async function getMonthFolderUrl() {

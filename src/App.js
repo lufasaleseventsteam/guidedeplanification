@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { uid } from "./helpers";
 import { loadEvents, saveEvents } from "./storage";
-import { saveToDrive, deleteDriveFile, loadEventsFromDrive, saveEventsToDrive, getMonthFolderUrl } from "./googleDrive";
+import { saveToDrive, deleteDriveFile, loadEventsFromDrive, saveEventsToDrive, deleteEventFromDb, getMonthFolderUrl } from "./googleDrive";
 import { generateDocx } from "./docxGenerator";
 import { saveAs } from "file-saver";
 import ListView   from "./views/ListView";
@@ -37,37 +37,8 @@ export default function App() {
     setEvents(updated);
     saveEvents(updated);
     try {
-      // Merge with current Drive state before saving to avoid overwriting others' events
-      const driveEvents = await loadEventsFromDrive();
-      const mergedMap = {};
-      // Start with Drive events as base
-      for (const ev of driveEvents) mergedMap[ev.id] = ev;
-      // Apply local updated events on top (local changes win for events we touched)
-      for (const ev of updated) mergedMap[ev.id] = ev;
-      // Resolve conflicts: for events edited by multiple users, keep the most recently modified
-      const driveMap = {};
-      for (const ev of driveEvents) driveMap[ev.id] = ev;
-      const localIds = new Set(updated.map(e => e.id));
-      const previousLocalIds = new Set(events.map(e => e.id));
-
-      const merged = Object.values(mergedMap).filter(ev => {
-        if (!localIds.has(ev.id) && previousLocalIds.has(ev.id)) return false; // deleted locally
-        return true;
-      }).map(ev => {
-        // If event exists both locally and on Drive, keep the newer version
-        const driveEv = driveMap[ev.id];
-        const localEv = updated.find(e => e.id === ev.id);
-        if (driveEv && localEv) {
-          const driveTime = driveEv.updatedAt || 0;
-          const localTime = localEv.updatedAt || 0;
-          return localTime >= driveTime ? localEv : driveEv;
-        }
-        return ev;
-      });
-      await saveEventsToDrive(merged);
-      // Update local state to reflect full merged list
-      setEvents(merged);
-      saveEvents(merged);
+      // Supabase upserts by event ID — no merge needed, just save
+      await saveEventsToDrive(updated);
     } catch(e) { console.error("saveEventsToDrive:", e); }
   };
 
@@ -75,11 +46,23 @@ export default function App() {
   const handleDriveSync = async () => {
     setDriveSyncing(true);
     try {
-      const evs = await loadEventsFromDrive();
-      // Always trust Drive as source of truth — overwrites local
-      setEvents(evs);
-      saveEvents(evs);
-    } catch(e) { console.error("Sync error:", e); }
+      const remoteEvs = await loadEventsFromDrive();
+      // Merge: remote wins for conflicts (newer updatedAt), keep all events from both
+      const mergedMap = {};
+      for (const ev of events) mergedMap[ev.id] = ev;
+      for (const ev of remoteEvs) {
+        const local = mergedMap[ev.id];
+        if (!local || (ev.updatedAt || 0) >= (local.updatedAt || 0)) {
+          mergedMap[ev.id] = ev;
+        }
+      }
+      const merged = Object.values(mergedMap);
+      setEvents(merged);
+      saveEvents(merged);
+    } catch(e) {
+      console.error("Sync error:", e);
+      alert("⚠️ Synchronisation impossible pour l'instant. Vos données locales sont conservées.");
+    }
     setDriveSyncing(false);
   };
 
@@ -163,6 +146,8 @@ export default function App() {
         }
       }
     }
+    // Delete from Supabase so all users see the deletion on next sync
+    try { await deleteEventFromDb(id); } catch(e) { console.error("Supabase delete failed:", e); }
     await persist(events.filter(e => e.id !== id));
     setDetailId(null);
     setView("list");
