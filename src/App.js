@@ -48,9 +48,11 @@ export default function App() {
     setDriveSyncing(true);
     try {
       const remoteEvs = await loadEventsFromDrive();
-      // Merge: remote wins for conflicts (newer updatedAt), keep all events from both
+      // Get current local events from storage (source of truth for local)
+      const localEvs = loadEvents();
+      // Merge: keep all events from both, newer updatedAt wins for conflicts
       const mergedMap = {};
-      for (const ev of events) mergedMap[ev.id] = ev;
+      for (const ev of localEvs) mergedMap[ev.id] = ev;
       for (const ev of remoteEvs) {
         const local = mergedMap[ev.id];
         if (!local || (ev.updatedAt || 0) >= (local.updatedAt || 0)) {
@@ -60,6 +62,10 @@ export default function App() {
       const merged = Object.values(mergedMap);
       setEvents(merged);
       saveEvents(merged);
+      // Push any local-only events up to Supabase
+      if (merged.length > remoteEvs.length) {
+        await saveEventsToDrive(merged);
+      }
     } catch(e) {
       console.error("Sync error:", e);
       alert("⚠️ Synchronisation impossible pour l'instant. Vos données locales sont conservées.");
