@@ -8,7 +8,9 @@ function ImageCard({ img, onChange, onRemove }) {
   return (
     <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: 12, marginBottom: 10 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-        <img src={img.data} alt={img.name} style={{ width: 80, height: 64, objectFit: "cover", borderRadius: 6, flexShrink: 0, border: "1px solid rgba(255,255,255,0.1)" }} />
+        {img.isPdf
+          ? <div style={{ width: 80, height: 64, borderRadius: 6, flexShrink: 0, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>📄</div>
+          : <img src={img.data} alt={img.name} style={{ width: 80, height: 64, objectFit: "cover", borderRadius: 6, flexShrink: 0, border: "1px solid rgba(255,255,255,0.1)" }} />}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.8)", marginBottom: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{img.name}</div>
           <div>
@@ -69,6 +71,15 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
   const handleMapUpload = async e => {
     const files = Array.from(e.target.files);
     const loaded = await Promise.all(files.map(async file => {
+      // Handle PDFs — store as base64 directly, no canvas compression
+      if (file.type === "application/pdf") {
+        const data = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = e => resolve(e.target.result);
+          reader.readAsDataURL(file);
+        });
+        return { id: uid(), data, naturalW: null, naturalH: null, name: file.name, width: 100, isPdf: true };
+      }
       // Compress image to max 1200px wide to keep payload manageable
       const data = await new Promise((resolve) => {
         const img = new Image();
@@ -81,11 +92,11 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
           canvas.height = Math.round(img.height * scale);
           canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
           URL.revokeObjectURL(url);
-          resolve(canvas.toDataURL("image/jpeg", 0.82));
+          resolve({ data: canvas.toDataURL("image/jpeg", 0.82), naturalW: canvas.width, naturalH: canvas.height });
         };
         img.src = url;
       });
-      return { id: uid(), data, name: file.name, width: 100 };
+      return { id: uid(), data: data.data, naturalW: data.naturalW, naturalH: data.naturalH, name: file.name, width: 100 };
     }));
     setForm(f => ({ ...f, mapImages: [...(f.mapImages || []), ...loaded] }));
     e.target.value = "";
@@ -297,9 +308,9 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
           ))}
           <button onClick={() => fileRef.current.click()}
             style={{ width: "100%", background: "rgba(74,124,89,0.12)", border: "2px dashed rgba(74,124,89,0.4)", borderRadius: 8, padding: "12px", color: PALETTE.greenLight, cursor: "pointer", fontSize: 13, fontFamily: "inherit", fontWeight: 600, marginTop: 4 }}>
-            + Ajouter une ou plusieurs images
+            + Ajouter images ou PDFs
           </button>
-          <input autoComplete="off" ref={fileRef} type="file" accept="image/*" multiple onChange={handleMapUpload} style={{ display: "none" }} />
+          <input autoComplete="off" ref={fileRef} type="file" accept="image/*,application/pdf" multiple onChange={handleMapUpload} style={{ display: "none" }} />
         </Fld>
       </Card>
 

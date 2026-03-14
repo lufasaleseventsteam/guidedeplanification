@@ -350,17 +350,25 @@ export async function generateDocx(form) {
 
   for (const img of (form.mapImages || [])) {
     try {
+      if (img.isPdf) {
+        // PDFs can't be embedded as images — show a labelled placeholder
+        mapChildren.push(P([Tb("📄 "), T(img.name || "Document PDF")], { spacing: { before: 100, after: 60 } }));
+        continue;
+      }
       const base64 = img.data.split(",")[1];
       const binary = atob(base64);
       const bytes  = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
       const ext = (img.name || "map.png").split(".").pop().toLowerCase();
-      const maxW = 9360; // content width in DXA (1440 per inch, 6.5in = 9360)
-      const pxW  = Math.round((img.width / 100) * 460);
+      const maxDocW = 460; // max width in points at 100%
+      const pxW = Math.round((img.width / 100) * maxDocW);
+      // Use stored natural dimensions to preserve aspect ratio
+      const ratio = (img.naturalW && img.naturalH) ? (img.naturalH / img.naturalW) : 1;
+      const pxH = Math.round(pxW * ratio);
       mapChildren.push(P([new ImageRun({
         data: bytes,
         type: { png: "png", jpg: "jpg", jpeg: "jpg", gif: "gif", webp: "webp" }[ext] || "png",
-        transformation: { width: pxW, height: Math.round(pxW * 1.3) },
+        transformation: { width: pxW, height: pxH },
       })], { spacing: { before: 100, after: 60 } }));
     } catch(e) { /* skip */ }
   }

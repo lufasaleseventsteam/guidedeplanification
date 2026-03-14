@@ -36,7 +36,39 @@ export default function App() {
   const persist = async (updated) => {
     setEvents(updated);
     saveEvents(updated);
-    try { await saveEventsToDrive(updated); } catch(e) { console.error("saveEventsToDrive:", e); }
+    try {
+      // Merge with current Drive state before saving to avoid overwriting others' events
+      const driveEvents = await loadEventsFromDrive();
+      const mergedMap = {};
+      // Start with Drive events as base
+      for (const ev of driveEvents) mergedMap[ev.id] = ev;
+      // Apply local updated events on top (local changes win for events we touched)
+      for (const ev of updated) mergedMap[ev.id] = ev;
+      // Resolve conflicts: for events edited by multiple users, keep the most recently modified
+      const driveMap = {};
+      for (const ev of driveEvents) driveMap[ev.id] = ev;
+      const localIds = new Set(updated.map(e => e.id));
+      const previousLocalIds = new Set(events.map(e => e.id));
+
+      const merged = Object.values(mergedMap).filter(ev => {
+        if (!localIds.has(ev.id) && previousLocalIds.has(ev.id)) return false; // deleted locally
+        return true;
+      }).map(ev => {
+        // If event exists both locally and on Drive, keep the newer version
+        const driveEv = driveMap[ev.id];
+        const localEv = updated.find(e => e.id === ev.id);
+        if (driveEv && localEv) {
+          const driveTime = driveEv.updatedAt || 0;
+          const localTime = localEv.updatedAt || 0;
+          return localTime >= driveTime ? localEv : driveEv;
+        }
+        return ev;
+      });
+      await saveEventsToDrive(merged);
+      // Update local state to reflect full merged list
+      setEvents(merged);
+      saveEvents(merged);
+    } catch(e) { console.error("saveEventsToDrive:", e); }
   };
 
   // ── Sync from Drive ────────────────────────────────────────────────────────
