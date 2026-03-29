@@ -2,7 +2,7 @@
 // Saves generated PDFs/Docs to a shared folder, organized by month
 
 const CLIENT_ID    = "501413490319-4pu387normemfmcna5bjc5vniaecce83.apps.googleusercontent.com";
-const PARENT_FOLDER = "1Ttn32tDLv_OvbBvRmnXn7rWGsIm-rFLm";
+const PARENT_FOLDER = "1Vo4CmpEFgZe8bOao2ffQk6Xie6Qie2mv";
 const SCOPES       = "https://www.googleapis.com/auth/drive";
 
 const FR_MONTHS = [
