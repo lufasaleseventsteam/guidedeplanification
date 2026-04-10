@@ -1,6 +1,6 @@
 import React from "react";
 import { DAY_TYPES, inp, PALETTE } from "../constants";
-import { uid } from "../helpers";
+import { uid, normalizeTime } from "../helpers";
 import { Fld, Lbl, Sel, Inp } from "./UI";
 
 // A single activity block within a day
