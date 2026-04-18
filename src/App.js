@@ -28,6 +28,13 @@ export default function App() {
   // Load from localStorage on login (instant, no OAuth)
   useEffect(() => {
     if (!user) { setLoading(false); return; }
+    // Auto-clear localStorage if it's corrupted or oversized
+    try {
+      const raw = localStorage.getItem("lufa-events-v1");
+      if (raw) JSON.parse(raw); // test if parseable
+    } catch(e) {
+      localStorage.removeItem("lufa-events-v1");
+    }
     setEvents(loadEvents());
     setLoading(false);
   }, [user]);
