@@ -150,17 +150,7 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
         <Fld label="Nom de l'événement">
           <Inp value={form.eventName} onChange={set("eventName")} placeholder="ex: Fête des semences – Pépinière Locas" />
         </Fld>
-        <Fld label="" style={{ marginBottom: 8 }}>
-          <div style={{ display: "flex", gap: 16 }}>
-            {[["interieur", "🏠 Intérieur"], ["exterieur", "🌤️ Extérieur"]].map(([val, label]) => (
-              <label key={val} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 16px", background: form.lieuType === val ? "rgba(100,200,100,0.18)" : "rgba(255,255,255,0.07)", border: form.lieuType === val ? "1.5px solid rgba(100,220,100,0.5)" : "1px solid rgba(255,255,255,0.18)", borderRadius: 7, cursor: "pointer", fontWeight: "bold", fontSize: 14, color: "#e8f0e9" }}>
-                <input type="radio" name="lieuType" value={val} checked={form.lieuType === val} onChange={() => set("lieuType")(val)}
-                  style={{ width: 16, height: 16, accentColor: "#7ecb8f", cursor: "pointer" }} />
-                {label}
-              </label>
-            ))}
-          </div>
-        </Fld>
+
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Fld label="Guide rempli par" style={{ marginBottom: 0 }}>
             <Inp value={form.createdBy || ""} onChange={set("createdBy")} placeholder="ex: Marie Tremblay" />
@@ -216,6 +206,7 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
         <Fld label="Adresse principale">
           <AddressField value={form.adresse} onChange={set("adresse")} />
         </Fld>
+
         <Fld label="" style={{ marginBottom: 8 }}>
           <div style={{ display: "flex", gap: 16 }}>
             {[["interieur", "🏠 Intérieur"], ["exterieur", "🌤️ Extérieur"]].map(([val, label]) => (
@@ -290,17 +281,7 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
 
       <Card>
         <SecTitle>👤 Contact sur place</SecTitle>
-        <Fld label="" style={{ marginBottom: 8 }}>
-          <div style={{ display: "flex", gap: 16 }}>
-            {[["interieur", "🏠 Intérieur"], ["exterieur", "🌤️ Extérieur"]].map(([val, label]) => (
-              <label key={val} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 16px", background: form.lieuType === val ? "rgba(100,200,100,0.18)" : "rgba(255,255,255,0.07)", border: form.lieuType === val ? "1.5px solid rgba(100,220,100,0.5)" : "1px solid rgba(255,255,255,0.18)", borderRadius: 7, cursor: "pointer", fontWeight: "bold", fontSize: 14, color: "#e8f0e9" }}>
-                <input type="radio" name="lieuType" value={val} checked={form.lieuType === val} onChange={() => set("lieuType")(val)}
-                  style={{ width: 16, height: 16, accentColor: "#7ecb8f", cursor: "pointer" }} />
-                {label}
-              </label>
-            ))}
-          </div>
-        </Fld>
+
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Fld label="Nom"><Inp value={form.contactNom} onChange={set("contactNom")} placeholder="ex: Stéphanie" /></Fld>
           <Fld label="Téléphone"><Inp value={form.contactTel} onChange={set("contactTel")} placeholder="ex: 438-502-0202" /></Fld>
