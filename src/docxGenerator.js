@@ -229,6 +229,7 @@ export async function generateDocx(form) {
       new TableRow({ children: [new TableCell({
         width: { size: 11760, type: WidthType.DXA }, borders: bords, margins: cmLg,
         children: [
+          ...(form.lieuType ? [P([Tb("📍 Type de lieu : ", { bold: true, size: 24 }), T(form.lieuType === "interieur" ? "🏠 Intérieur" : "🌤️ Extérieur", { bold: true, size: 24 })])] : []),
           P([Tb("• Accès : "), T("Voir le plan d'accès ci-bas.")]),
           ...(form.adresse ? [
             P([

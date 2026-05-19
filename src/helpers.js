@@ -112,6 +112,7 @@ export const defaultForm = {
   mapImages: [],
   attachments: [],
   boothNumber: "",          // numéro de kiosque / emplacement
+  lieuType: "",             // "interieur" or "exterieur"
   camionElectrique: false,  // checkbox véhicule électrique
   isOutdoor: false,         // indoor vs outdoor event
   isRecurring: false,       // recurring event toggle
