@@ -71,8 +71,12 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
   const handleMapUpload = async e => {
     const files = Array.from(e.target.files);
     const loaded = await Promise.all(files.map(async file => {
-      // Handle PDFs — store as base64 directly, no canvas compression
+      // PDFs no longer supported in map section
       if (file.type === "application/pdf") {
+        alert("Les PDFs ne sont pas supportés ici. Utilisez la section Documents joints.");
+        continue;
+      }
+      if (false && file.type === "application/pdf") {
         const data = await new Promise((resolve) => {
           const reader = new FileReader();
           reader.onload = e => resolve(e.target.result);
@@ -322,9 +326,9 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
           ))}
           <button onClick={() => fileRef.current.click()}
             style={{ width: "100%", background: "rgba(74,124,89,0.12)", border: "2px dashed rgba(74,124,89,0.4)", borderRadius: 8, padding: "12px", color: PALETTE.greenLight, cursor: "pointer", fontSize: 13, fontFamily: "inherit", fontWeight: 600, marginTop: 4 }}>
-            + Ajouter images ou PDFs
+            + Ajouter images (JPG, PNG, WEBP)
           </button>
-          <input autoComplete="off" ref={fileRef} type="file" accept="image/*,application/pdf" multiple onChange={handleMapUpload} style={{ display: "none" }} />
+          <input autoComplete="off" ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handleMapUpload} style={{ display: "none" }} />
         </Fld>
       </Card>
 
