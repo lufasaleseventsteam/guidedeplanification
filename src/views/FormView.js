@@ -70,19 +70,11 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
 
   const handleMapUpload = async e => {
     const files = Array.from(e.target.files);
-    const loaded = await Promise.all(files.map(async file => {
+    const rawLoaded = await Promise.all(files.map(async file => {
       // PDFs no longer supported in map section
       if (file.type === "application/pdf") {
         alert("Les PDFs ne sont pas supportés ici. Utilisez la section Documents joints.");
-        continue;
-      }
-      if (false && file.type === "application/pdf") {
-        const data = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = e => resolve(e.target.result);
-          reader.readAsDataURL(file);
-        });
-        return { id: uid(), data, naturalW: null, naturalH: null, name: file.name, width: 100, isPdf: true };
+        return null;
       }
       // Compress image to max 1200px wide to keep payload manageable
       const data = await new Promise((resolve) => {
