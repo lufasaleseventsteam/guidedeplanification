@@ -349,6 +349,7 @@ export async function generateDocx(form) {
     }),
   ];
 
+  console.log("[DocGen] mapImages:", (form.mapImages || []).map(i => ({ name: i.name, hasData: !!i.data, isPdf: i.isPdf })));
   for (const img of (form.mapImages || [])) {
     try {
       if (img.isPdf) {

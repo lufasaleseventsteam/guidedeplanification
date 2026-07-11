@@ -174,7 +174,7 @@ export async function saveToDrive(blob, fileName, mimeType) {
   const folderId = await getOrCreateMonthFolder();
   const isDocx = mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   const file   = await uploadFile(blob, fileName, mimeType, folderId, isDocx);
-  await makePublicReadable(file.id);
+  // Permissions set at folder level — no need to set per-file
   return {
     fileId:    file.id,
     name:      file.name,
@@ -216,8 +216,8 @@ export async function loadEventsFromDrive() {
 }
 
 export async function saveEventsToDrive(events) {
-  // Upsert each event individually by id
-  const rows = events.map(ev => ({
+  // Only called with the single changed event now — avoids row explosion
+  const rows = (Array.isArray(events) ? events : [events]).map(ev => ({
     id: ev.id,
     data: ev,
     updated_at: new Date().toISOString()
@@ -235,6 +235,10 @@ export async function saveEventsToDrive(events) {
     const err = await resp.text();
     throw new Error(`[Supabase] Save failed: ${err}`);
   }
+}
+
+export async function saveEventToDrive(ev) {
+  return saveEventsToDrive([ev]);
 }
 
 export async function deleteEventFromDb(eventId) {

@@ -9,24 +9,18 @@ export function loadEvents() {
 
 export function saveEvents(events) {
   try {
-    // Strip map images before saving locally — they are large base64 strings
-    // that quickly exceed localStorage quota. Images are re-uploaded to Drive on save.
-    const stripped = events.map(ev => ({
-      ...ev,
-      mapImages: (ev.mapImages || []).map(img => ({
-        ...img,
-        data: undefined  // remove base64 data, keep metadata
-      }))
-    }));
-    localStorage.setItem(KEY, JSON.stringify(stripped));
+    localStorage.setItem(KEY, JSON.stringify(events));
   } catch(e) {
-    // Quota exceeded — clear and try again with stripped data
+    // Quota exceeded — try without map image data as fallback cache
     try {
       localStorage.removeItem(KEY);
-      const minimal = events.map(ev => ({ ...ev, mapImages: [] }));
-      localStorage.setItem(KEY, JSON.stringify(minimal));
+      const stripped = events.map(ev => ({
+        ...ev,
+        mapImages: (ev.mapImages || []).map(img => ({ ...img, data: undefined }))
+      }));
+      localStorage.setItem(KEY, JSON.stringify(stripped));
     } catch(e2) {
-      // If still failing, just skip localStorage — Supabase is the source of truth
+      // If still failing, skip localStorage — Supabase is the source of truth
       console.warn("localStorage unavailable, relying on Supabase only:", e2.message);
     }
   }

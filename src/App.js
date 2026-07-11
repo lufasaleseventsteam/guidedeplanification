@@ -44,8 +44,13 @@ export default function App() {
     setEvents(updated);
     saveEvents(updated);
     try {
-      // Supabase upserts by event ID — no merge needed, just save
-      await saveEventsToDrive(updated);
+      // Only push changed events to Supabase to avoid row explosion
+      const previousIds = new Set(events.map(e => e.id));
+      const changed = updated.filter(ev => {
+        const prev = events.find(e => e.id === ev.id);
+        return !prev || JSON.stringify(prev) !== JSON.stringify(ev) || !previousIds.has(ev.id);
+      });
+      if (changed.length > 0) await saveEventsToDrive(changed);
     } catch(e) { console.error("saveEventsToDrive:", e); }
   };
 
@@ -99,12 +104,15 @@ export default function App() {
     // 2. Upload attachments + generate docx — stay on form until done
     setSavingDoc(true);
     try {
+      console.log("[Attachments] Total:", (savedEvent.attachments || []).length);
       const attachments = await Promise.all(
         (savedEvent.attachments || []).map(async att => {
+          console.log("[Attachment]", att.name, "has file:", !!att.file, "has driveLink:", !!att.driveLink);
           if (!att.file) return att;
           try {
             const blob  = att.file instanceof Blob ? att.file : new Blob([att.file], { type: att.type });
             const drive = await saveToDrive(blob, att.name, att.type);
+            console.log("[Attachment] Uploaded:", att.name, "→", drive.shareLink);
             return { ...att, file: undefined, driveLink: drive.shareLink, fileId: drive.fileId };
           } catch(e) {
             console.error("Attachment upload failed:", att.name, e);
@@ -112,6 +120,7 @@ export default function App() {
           }
         })
       );
+      console.log("[Attachments] After upload:", attachments.map(a => ({ name: a.name, driveLink: a.driveLink })));
 
       const eventWithAtts = { ...savedEvent, attachments };
       const result = await generateDocx(eventWithAtts);
