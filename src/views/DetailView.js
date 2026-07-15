@@ -33,13 +33,13 @@ export default function DetailView({ ev, onEdit, onDelete, onBack, onGenerate, g
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           {[
             ["📅 Dates",           dateRange],
-            ["📍 Adresse",          ev.adresse         || "—"],
-            ["👤 Contact",         `${ev.contactNom || "—"}${ev.contactTel ? ` · ${ev.contactTel}` : ""}`],
-            ["🔧 Accès montage",    ev.montageAccesFrom || "—"],
+            ["📍 Adresse",          ev.address         || "—"],
+            ["👤 Contact",         `${ev.contactName || "—"}${ev.contactPhone ? ` · ${ev.contactPhone}` : ""}`],
+            ["🔧 Accès montage",    ev.accessNotes || "—"],
             ...(ev.boothNumber      ? [["🎪 Kiosque / emplacement", ev.boothNumber]]       : []),
             ...(ev.camionElectrique ? [["⚡ Véhicule",              "Camion électrique"]]  : []),
-            [ev.isOutdoor ? "🌤️ Type" : "🏢 Type", ev.isOutdoor ? "Extérieur" : "Intérieur"],
-            ...(ev.createdBy ? [["📋 Guide rempli par",  ev.createdBy]] : []),
+            ...(ev.lieuType ? [[ev.lieuType === "exterieur" ? "🌤️ Type" : "🏠 Type", ev.lieuType === "exterieur" ? "Extérieur" : "Intérieur"]] : []),
+            ...(ev.guide ? [["📋 Guide rempli par",  ev.guide]] : []),
             ...(ev.bookedBy  ? [["📅 Réservé par",        ev.bookedBy]]  : []),
           ].map(([k, v]) => (
             <div key={k}><Lbl>{k}</Lbl><div style={{ fontSize: 14 }}>{v}</div></div>
