@@ -33,44 +33,44 @@ export default function DetailView({ ev, onEdit, onDelete, onBack, onGenerate, g
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           {[
             ["📅 Dates",           dateRange],
-            ["📍 Adresse",          ev.address         || "—"],
-            ["👤 Contact",         `${ev.contactName || "—"}${ev.contactPhone ? ` · ${ev.contactPhone}` : ""}`],
-            ["🔧 Accès montage",    ev.accessNotes || "—"],
+            ["📍 Adresse",          ev.adresse         || "—"],
+            ["👤 Contact",         `${ev.contactNom || "—"}${ev.contactTel ? ` · ${ev.contactTel}` : ""}`],
+            ["🔧 Accès montage",    ev.instructions || "—"],
             ...(ev.boothNumber      ? [["🎪 Kiosque / emplacement", ev.boothNumber]]       : []),
             ...(ev.camionElectrique ? [["⚡ Véhicule",              "Camion électrique"]]  : []),
             ...(ev.lieuType ? [[ev.lieuType === "exterieur" ? "🌤️ Type" : "🏠 Type", ev.lieuType === "exterieur" ? "Extérieur" : "Intérieur"]] : []),
-            ...(ev.guide ? [["📋 Guide rempli par",  ev.guide]] : []),
+            ...(ev.createdBy ? [["📋 Guide rempli par",  ev.createdBy]] : []),
             ...(ev.bookedBy  ? [["📅 Réservé par",        ev.bookedBy]]  : []),
             ...(ev.stationnement ? [["🅿️ Stationnement", ev.stationnement]] : []),
-            ...(ev.wifiName ? [["📶 WiFi", `${ev.wifiName}${ev.wifiPassword ? ` · ${ev.wifiPassword}` : ""}`]] : []),
+            ...(ev.wifi ? [["📶 WiFi", `${ev.wifi}${ev.wifiMdp ? ` · ${ev.wifiMdp}` : ""}`]] : []),
             ...(ev.objectif ? [["🎯 Objectif", `${ev.objectif} inscriptions`]] : []),
-            ...(ev.cost ? [["💰 Coût", `${ev.cost} $`]] : []),
+            ...(ev.eventCost ? [["💰 Coût", `${ev.eventCost} $`]] : []),
           ].map(([k, v]) => (
             <div key={k}><Lbl>{k}</Lbl><div style={{ fontSize: 14 }}>{v}</div></div>
           ))}
         </div>
 
         {/* Materiel */}
-        {ev.materiel && (
+        {ev.materielNecessaire && (
           <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
             <Lbl>📦 Matériel nécessaire</Lbl>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", whiteSpace: "pre-wrap", marginTop: 4 }}>{ev.materiel}</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", whiteSpace: "pre-wrap", marginTop: 4 }}>{ev.materielNecessaire}</div>
           </div>
         )}
 
         {/* Notes internes */}
-        {ev.notes && (
+        {ev.notesInternes && (
           <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
             <Lbl>🔒 Notes internes</Lbl>
-            <div style={{ fontSize: 13, color: "#ffe082", whiteSpace: "pre-wrap", marginTop: 4 }}>{ev.notes}</div>
+            <div style={{ fontSize: 13, color: "#ffe082", whiteSpace: "pre-wrap", marginTop: 4 }}>{ev.notesInternes}</div>
           </div>
         )}
 
         {/* Access notes */}
-        {ev.accessNotes && (
+        {ev.instructions && (
           <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
             <Lbl>🔧 Instructions de montage</Lbl>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", whiteSpace: "pre-wrap", marginTop: 4 }}>{ev.accessNotes}</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", whiteSpace: "pre-wrap", marginTop: 4 }}>{ev.instructions}</div>
           </div>
         )}
 
