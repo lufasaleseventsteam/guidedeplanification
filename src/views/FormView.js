@@ -94,6 +94,7 @@ export default function FormView({ initial, onSave, onCancel, isEdit }) {
       });
       return { id: uid(), data: data.data, naturalW: data.naturalW, naturalH: data.naturalH, name: file.name, width: 100 };
     }));
+    const loaded = rawLoaded.filter(Boolean);
     setForm(f => ({ ...f, mapImages: [...(f.mapImages || []), ...loaded] }));
     e.target.value = "";
   };
