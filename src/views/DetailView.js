@@ -41,10 +41,38 @@ export default function DetailView({ ev, onEdit, onDelete, onBack, onGenerate, g
             ...(ev.lieuType ? [[ev.lieuType === "exterieur" ? "🌤️ Type" : "🏠 Type", ev.lieuType === "exterieur" ? "Extérieur" : "Intérieur"]] : []),
             ...(ev.guide ? [["📋 Guide rempli par",  ev.guide]] : []),
             ...(ev.bookedBy  ? [["📅 Réservé par",        ev.bookedBy]]  : []),
+            ...(ev.stationnement ? [["🅿️ Stationnement", ev.stationnement]] : []),
+            ...(ev.wifiName ? [["📶 WiFi", `${ev.wifiName}${ev.wifiPassword ? ` · ${ev.wifiPassword}` : ""}`]] : []),
+            ...(ev.objectif ? [["🎯 Objectif", `${ev.objectif} inscriptions`]] : []),
+            ...(ev.cost ? [["💰 Coût", `${ev.cost} $`]] : []),
           ].map(([k, v]) => (
             <div key={k}><Lbl>{k}</Lbl><div style={{ fontSize: 14 }}>{v}</div></div>
           ))}
         </div>
+
+        {/* Materiel */}
+        {ev.materiel && (
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <Lbl>📦 Matériel nécessaire</Lbl>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", whiteSpace: "pre-wrap", marginTop: 4 }}>{ev.materiel}</div>
+          </div>
+        )}
+
+        {/* Notes internes */}
+        {ev.notes && (
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <Lbl>🔒 Notes internes</Lbl>
+            <div style={{ fontSize: 13, color: "#ffe082", whiteSpace: "pre-wrap", marginTop: 4 }}>{ev.notes}</div>
+          </div>
+        )}
+
+        {/* Access notes */}
+        {ev.accessNotes && (
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <Lbl>🔧 Instructions de montage</Lbl>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", whiteSpace: "pre-wrap", marginTop: 4 }}>{ev.accessNotes}</div>
+          </div>
+        )}
 
         {/* Signup objective */}
         {(ev.signupObjectiveTotal || animDays.some(d => d.signupObjective)) && (
