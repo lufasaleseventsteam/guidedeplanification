@@ -178,6 +178,7 @@ export default function App() {
 
   // ── Regenerate doc manually ────────────────────────────────────────────────
   const handleGenerate = async (ev, format = "docx") => {
+    console.log("[Generate] mapImages:", (ev.mapImages || []).map(i => ({ name: i.name, hasData: !!i.data, dataLen: i.data?.length })));
     setGenerating(ev.id);
     try {
       const result = await generateDocx(ev);

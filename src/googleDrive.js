@@ -140,10 +140,11 @@ async function uploadFile(blob, fileName, mimeType, folderId, convertToGoogleDoc
 
 async function makePublicReadable(fileId) {
   const token = await getAccessToken();
-  await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+  // Share with lufa.com domain so all team members can open links
+  await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions?supportsAllDrives=true`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ role: "reader", type: "anyone" }),
+    body: JSON.stringify({ role: "reader", type: "domain", domain: "lufa.com" }),
   });
 }
 
@@ -174,7 +175,8 @@ export async function saveToDrive(blob, fileName, mimeType) {
   const folderId = await getOrCreateMonthFolder();
   const isDocx = mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   const file   = await uploadFile(blob, fileName, mimeType, folderId, isDocx);
-  // Permissions set at folder level — no need to set per-file
+  // Share with lufa.com domain so all team members can open links
+  try { await makePublicReadable(file.id); } catch(e) { console.warn("Permission set failed:", e); }
   return {
     fileId:    file.id,
     name:      file.name,
