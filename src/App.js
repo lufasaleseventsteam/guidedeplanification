@@ -178,6 +178,15 @@ export default function App() {
 
   // ── Regenerate doc manually ────────────────────────────────────────────────
   const handleGenerate = async (ev, format = "docx") => {
+    // Fetch fresh event data from Supabase to ensure image data is present
+    try {
+      const fresh = await loadEventsFromDrive();
+      const freshEv = fresh.find(e => e.id === ev.id);
+      if (freshEv) {
+        console.log("[Generate] Using fresh Supabase data, mapImages:", (freshEv.mapImages || []).map(i => ({ name: i.name, hasData: !!i.data })));
+        ev = freshEv;
+      }
+    } catch(e) { console.warn("[Generate] Could not fetch fresh data:", e); }
     console.log("[Generate] mapImages:", (ev.mapImages || []).map(i => ({ name: i.name, hasData: !!i.data, dataLen: i.data?.length })));
     setGenerating(ev.id);
     try {
