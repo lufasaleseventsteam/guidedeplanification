@@ -42,16 +42,19 @@ export default function App() {
   // ── Persist: save to localStorage + Drive ─────────────────────────────────
   const persist = async (updated) => {
     setEvents(updated);
-    saveEvents(updated);
     try {
-      // Only push changed events to Supabase to avoid row explosion
+      // Push to Supabase FIRST with full data (including images)
       const previousIds = new Set(events.map(e => e.id));
       const changed = updated.filter(ev => {
         const prev = events.find(e => e.id === ev.id);
-        return !prev || JSON.stringify(prev) !== JSON.stringify(ev) || !previousIds.has(ev.id);
+        return !prev || !previousIds.has(ev.id) ||
+          JSON.stringify({...prev, mapImages: []}) !== JSON.stringify({...ev, mapImages: []}) ||
+          (ev.mapImages || []).some((img, i) => img.data !== (prev.mapImages || [])[i]?.data);
       });
       if (changed.length > 0) await saveEventsToDrive(changed);
     } catch(e) { console.error("saveEventsToDrive:", e); }
+    // Save to localStorage after Supabase (stripping images if needed is fine here)
+    saveEvents(updated);
   };
 
   // ── Sync from Drive ────────────────────────────────────────────────────────
